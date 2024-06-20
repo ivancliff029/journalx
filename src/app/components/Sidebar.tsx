@@ -1,47 +1,34 @@
 import React from 'react';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import IconButton from '@mui/material/IconButton';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
 
 interface SidebarProps {
   open: boolean;
-  onClose: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   return (
     <Drawer
       variant="persistent"
-      anchor="left"
       open={open}
       sx={{
-        width: '240px',
-        flexShrink: 0,
         '& .MuiDrawer-paper': {
+          top: '64px', // Adjust based on the height of the Navbar
           width: '240px',
         },
       }}
     >
-      <div>
-        <IconButton onClick={onClose}>
-          <ChevronLeftIcon />
-        </IconButton>
-      </div>
-      <List>
-        <ListItem button>
-          <ListItemText primary="Journal 1" />
-        </ListItem>
-        <ListItem button>
-          <ListItemText primary="Journal 2" />
-        </ListItem>
-        <ListItem button>
-          <ListItemText primary="Journal 3" />
-        </ListItem>
-        {/* Add more journals dynamically */}
-      </List>
+      <Box sx={{ width: 240 }}>
+        <List>
+          {/* List items for previous journals can be added here */}
+          <ListItem button>
+            <ListItemText primary="Journal 1" />
+          </ListItem>
+          <ListItem button>
+            <ListItemText primary="Journal 2" />
+          </ListItem>
+          {/* Add more ListItems as needed */}
+        </List>
+      </Box>
     </Drawer>
   );
 };
