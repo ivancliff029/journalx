@@ -18,18 +18,22 @@ const generationConfig = {
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { input } = req.body;
+    const { description } = req.body;
+
+    const inputText = `Based on the following journal entry, find related stoic quotes:\n${description}`;
 
     try {
-      const chatSession = model.startChat({
+      const chatSession = await model.startChat({
         generationConfig,
         history: [],
       });
 
-      const result = await chatSession.sendMessage(input);
-      res.status(200).json({ response: result.response.text() });
+      const result = await chatSession.sendMessage(inputText);
+      const responseText = await result.response.text();
+      res.status(200).json({ response: responseText });
     } catch (error) {
-      res.status(500).json({ error: 'Error communicating with Gemini' });
+      console.error('Error communicating with Gemini:', error);
+      res.status(500).json({ error: 'Error communicating with Gemini', details: error.message, stack: error.stack });
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });

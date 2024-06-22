@@ -7,13 +7,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Typography,
-  Grid,
   MenuItem,
   Select,
   InputLabel,
   FormControl,
-  SelectChangeEvent
+  SelectChangeEvent,
 } from '@mui/material';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
@@ -23,7 +21,7 @@ import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 interface AddJournalFormProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (title: string, content: string, emotion: string) => void;
+  onAdd: (title: string, content: string, emotion: string, stoicQuote: string) => void;
 }
 
 const emotions = [
@@ -63,6 +61,8 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
   const [isActive, setIsActive] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState('');
   const [descriptionPlaceholder, setDescriptionPlaceholder] = useState("What's on your mind?");
+  const [stoicQuote, setStoicQuote] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -77,14 +77,12 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
   const handleEmotionChange = (event: SelectChangeEvent<string>) => {
     setSelectedEmotion(event.target.value);
     setIsActive(title.length > 0 || content.length > 0 || event.target.value !== '' || selectedActivity.length > 0);
-    console.log(`Selected Emotion: ${event.target.value}`);
   };
 
   const handleActivityClick = (activity: string) => {
     setSelectedActivity(activity);
     setDescriptionPlaceholder('Comment on activity');
     setIsActive(true);
-    console.log(`Selected Activity: ${activity}`);
   };
 
   const handleKeyboardClick = () => {
@@ -93,19 +91,42 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
     setIsActive(title.length > 0 || content.length > 0 || selectedEmotion.length > 0);
   };
 
-  const handleSubmit = () => {
-    console.log(`Title: ${title}`);
-    console.log(`Content: ${content}`);
-    console.log(`Selected Emotion: ${selectedEmotion}`);
-    console.log(`Selected Activity: ${selectedActivity}`);
-    onAdd(title, content, selectedEmotion);
-    setTitle('');
-    setContent('');
-    setSelectedEmotion('');
-    setSelectedActivity('');
-    setIsActive(false);
-    onClose();
+  const handleSubmit = async () => {
+    setLoading(true);
+  
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ description: content }),
+      });
+  
+      if (!response.ok) {
+        const errorData: { details?: string } = await response.json(); // Type assertion
+        throw new Error(errorData.details || 'Error communicating with Gemini');
+      }
+  
+      const result = await response.json();
+      const quote: string = result.response; // Type assertion
+  
+      console.log('Received stoic quote:', quote);
+  
+      setStoicQuote(quote);
+      onAdd(title, content, selectedEmotion, quote);
+    } catch (error: unknown) { // Catching with unknown type
+      if (error instanceof Error) {
+        console.error('Error fetching data:', error.message, error.stack);
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    } finally {
+      setLoading(false);
+      onClose();
+    }
   };
+  
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -166,8 +187,8 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
           </Select>
         </FormControl>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary" sx={{ backgroundColor: isActive ? 'blue' : 'gray' }}>
-          Add
+        <Button onClick={handleSubmit} disabled={!isActive || loading} color="primary">
+          {loading ? 'Submitting...' : 'Submit'}
         </Button>
       </DialogActions>
     </Dialog>

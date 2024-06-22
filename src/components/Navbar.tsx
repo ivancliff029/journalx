@@ -17,7 +17,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [dialogOpen, setDialogOpen] = useState(false); // State for dialog
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
