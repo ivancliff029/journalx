@@ -1,26 +1,40 @@
-// components/Chat.js
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography } from '@mui/material';
 
-const Chat = ({ setResponseText }) => {
+import React, { useState, FormEvent } from 'react';
+import { Box, TextField, Button } from '@mui/material';
+
+interface ChatProps {
+  setResponseText: (response: string) => void;
+}
+
+const Chat: React.FC<ChatProps> = ({ setResponseText }) => {
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ input: userInput }),
-    });
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: userInput }),
+      });
 
-    const data = await res.json();
-    setResponseText(data.response);
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setResponseText(data.response);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setResponseText('Error: Could not fetch response');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
