@@ -1,14 +1,15 @@
 "use client";
 import React, { useState } from 'react';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Chat from './components/Chat'; // Import the Chat component
+import Chat from '@/components/Chat';
 
 const LandingPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [responseText, setResponseText] = useState('');
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -34,11 +35,11 @@ const LandingPage = () => {
               Welcome to Journal X
             </Typography>
             <Typography variant="body1" paragraph>
-              Explore your journals and start writing!
+              {responseText || 'Explore your journals and start writing!'}
             </Typography>
           </Container>
           <Container sx={{ p: 3 }}>
-            <Chat />
+            <Chat setResponseText={setResponseText} />
           </Container>
         </Box>
       </Box>
