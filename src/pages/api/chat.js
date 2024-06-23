@@ -1,5 +1,6 @@
-// pages/api/chat.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { db } from '../../lib/firebase';
+import { collection, addDoc, updateDoc, doc, arrayUnion } from "firebase/firestore";
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -18,7 +19,7 @@ const generationConfig = {
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { description } = req.body;
+    const { title, description, emotion, activity } = req.body;
 
     const inputText = `Based on the following journal entry, find related stoic quotes:\n${description}`;
 
@@ -30,7 +31,16 @@ export default async function handler(req, res) {
 
       const result = await chatSession.sendMessage(inputText);
       const responseText = await result.response.text();
-      res.status(200).json({ response: responseText });
+      const journalRef = await addDoc(collection(db, "journals"), {
+        title,
+        description,
+        emotion,
+        activity,
+        createdAt: new Date(),
+        quotes: [responseText]
+      });
+
+      res.status(200).json({ response: responseText, id: journalRef.id });
     } catch (error) {
       console.error('Error communicating with Gemini:', error);
       res.status(500).json({ error: 'Error communicating with Gemini', details: error.message, stack: error.stack });

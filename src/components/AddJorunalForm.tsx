@@ -17,11 +17,13 @@ import KeyboardIcon from '@mui/icons-material/Keyboard';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import BookIcon from '@mui/icons-material/Book';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import { db } from '../lib/firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 interface AddJournalFormProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (title: string, content: string, emotion: string, stoicQuote: string) => void;
+  onAdd: (id: string, title: string, content: string, emotion: string, stoicQuote: string) => void;
 }
 
 const emotions = [
@@ -93,29 +95,30 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
 
   const handleSubmit = async () => {
     setLoading(true);
-  
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ description: content }),
+        body: JSON.stringify({ title, description: content, emotion: selectedEmotion, activity: selectedActivity }),
       });
-  
+
       if (!response.ok) {
-        const errorData: { details?: string } = await response.json(); // Type assertion
+        const errorData: { details?: string } = await response.json();
         throw new Error(errorData.details || 'Error communicating with Gemini');
       }
-  
+
       const result = await response.json();
-      const quote: string = result.response; // Type assertion
-  
+      const quote: string = result.response;
+      const id: string = result.id;
+
       console.log('Received stoic quote:', quote);
-  
+
       setStoicQuote(quote);
-      onAdd(title, content, selectedEmotion, quote);
-    } catch (error: unknown) { // Catching with unknown type
+      onAdd(id, title, content, selectedEmotion, quote);
+    } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error fetching data:', error.message, error.stack);
       } else {
@@ -126,7 +129,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
       onClose();
     }
   };
-  
 
   return (
     <Dialog open={open} onClose={onClose}>

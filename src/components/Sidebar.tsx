@@ -3,30 +3,30 @@ import { Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
 
 interface SidebarProps {
   open: boolean;
+  journals: { id: string, title: string }[];
+  setJournals: React.Dispatch<React.SetStateAction<{ id: string, title: string }[]>>;
+  onJournalClick: (id: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ open }) => {
+const Sidebar: React.FC<SidebarProps> = ({ open, journals, setJournals, onJournalClick }) => {
   return (
     <Drawer
       variant="persistent"
       open={open}
       sx={{
         '& .MuiDrawer-paper': {
-          top: '64px', // Adjust based on the height of the Navbar
+          top: '64px', 
           width: '240px',
         },
       }}
     >
       <Box sx={{ width: 240 }}>
         <List>
-          {/* List items for previous journals can be added here */}
-          <ListItem button>
-            <ListItemText primary="Journal 1" />
-          </ListItem>
-          <ListItem button>
-            <ListItemText primary="Journal 2" />
-          </ListItem>
-          {/* Add more ListItems as needed */}
+          {journals.map((journal) => (
+            <ListItem button key={journal.id} onClick={() => onJournalClick(journal.id)}>
+              <ListItemText primary={journal.title} />
+            </ListItem>
+          ))}
         </List>
       </Box>
     </Drawer>
