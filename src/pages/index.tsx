@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
@@ -6,16 +6,16 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chat from '@/components/Chat';
-import { db } from '../lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc, addDoc } from 'firebase/firestore';
 
-const LandingPage = () => {
+const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [journalTitle, setJournalTitle] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
   const [journals, setJournals] = useState<{ id: string, title: string }[]>([]);
-  const [journalId,setJournalId] = useState('');
+  const [selectedJournalId, setSelectedJournalId] = useState<string | null>(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -40,9 +40,9 @@ const LandingPage = () => {
       const journalDoc = await getDoc(doc(db, 'journals', id));
       if (journalDoc.exists()) {
         const journalData = journalDoc.data();
-        setJournalId(id);
         setJournalTitle(journalData.title);
         setResponseText(journalData.quotes[0]);
+        setSelectedJournalId(id);
       }
     } catch (error) {
       console.error('Error fetching journal data:', error);
@@ -86,11 +86,11 @@ const LandingPage = () => {
             <Typography variant="body1" paragraph>
               {responseText || 'Explore your journals and start writing!'}
             </Typography>
-            <button onClick={addJournal}>Add a Journal</button>
+            <button onClick={addJournal}>Add Journal</button>
           </Container>
-          {dataFetched && (
+          {dataFetched && selectedJournalId && (
             <Container sx={{ p: 3 }}>
-              <Chat setResponseText={setResponseText} journalId={journalId} />
+              <Chat setResponseText={setResponseText} selectedJournalId={selectedJournalId} />
             </Container>
           )}
         </Box>
@@ -99,4 +99,4 @@ const LandingPage = () => {
   );
 };
 
-export default LandingPage;
+export default Index;
