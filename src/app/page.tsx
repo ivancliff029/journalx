@@ -15,6 +15,7 @@ const LandingPage = () => {
   const [journalTitle, setJournalTitle] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
   const [journals, setJournals] = useState<{ id: string, title: string }[]>([]);
+  const [journalId,setJournalId] = useState('');
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -39,6 +40,7 @@ const LandingPage = () => {
       const journalDoc = await getDoc(doc(db, 'journals', id));
       if (journalDoc.exists()) {
         const journalData = journalDoc.data();
+        setJournalId(id);
         setJournalTitle(journalData.title);
         setResponseText(journalData.quotes[0]);
       }
@@ -88,7 +90,7 @@ const LandingPage = () => {
           </Container>
           {dataFetched && (
             <Container sx={{ p: 3 }}>
-              <Chat setResponseText={setResponseText} />
+              <Chat setResponseText={setResponseText} journalId={journalId} />
             </Container>
           )}
         </Box>
