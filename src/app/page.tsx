@@ -84,7 +84,7 @@ const LandingPage = () => {
             <Typography variant="body1" paragraph>
               {responseText || 'Explore your journals and start writing!'}
             </Typography>
-            <button onClick={addJournal}>Add Journal</button>
+            <button onClick={addJournal}>Add a Journal</button>
           </Container>
           {dataFetched && (
             <Container sx={{ p: 3 }}>
