@@ -29,18 +29,24 @@ export default async function handler(req, res) {
         history: [],
       });
 
+      let currentMessages = [];
+
       const result = await chatSession.sendMessage(inputText);
       const responseText = await result.response.text();
+      
+      currentMessages.push({ role: "user", parts: [ { text: inputText}] });
+      currentMessages.push({ role: "model", parts: [{ text: responseText}] });
       const journalRef = await addDoc(collection(db, "journals"), {
         title,
         description,
         emotion,
         activity,
         createdAt: new Date(),
-        quotes: [responseText]
+        quotes: [responseText],
+        history: currentMessages,
       });
 
-      res.status(200).json({ response: responseText, id: journalRef.id });
+      res.status(200).json({ response: responseText, id: journalRef.id, history: currentMessages, });
     } catch (error) {
       console.error('Error communicating with Gemini:', error);
       res.status(500).json({ error: 'Error communicating with Gemini', details: error.message, stack: error.stack });

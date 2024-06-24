@@ -4,9 +4,10 @@ import { Box, TextField, Button } from '@mui/material';
 
 interface ChatProps {
   setResponseText: (response: string) => void;
+  journalId :string;
 }
 
-const Chat: React.FC<ChatProps> = ({ setResponseText }) => {
+const Chat: React.FC<ChatProps> = ({ setResponseText, journalId }) => {
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,12 +16,12 @@ const Chat: React.FC<ChatProps> = ({ setResponseText }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-        body: JSON.stringify({ input: userInput }),
+        body: JSON.stringify({ input: userInput, journalId }),
     });
 
       if (!response.ok) {
