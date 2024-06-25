@@ -7,15 +7,15 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chat from '@/components/Chat';
 import { db } from '../lib/firebase';
-import { collection, getDocs, doc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, addDoc, onSnapshot } from 'firebase/firestore';
 
 const LandingPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [responseText, setResponseText] = useState('');
   const [journalTitle, setJournalTitle] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
   const [journals, setJournals] = useState<{ id: string, title: string }[]>([]);
-  const [journalId,setJournalId] = useState('');
+  const [journalId, setJournalId] = useState('');
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -33,6 +33,14 @@ const LandingPage = () => {
     };
 
     fetchJournalTitles();
+
+    // Listen for real-time updates to journals collection
+    const unsubscribe = onSnapshot(collection(db, 'journals'), (snapshot) => {
+      const updatedJournals = snapshot.docs.map(doc => ({ id: doc.id, title: doc.data().title }));
+      setJournals(updatedJournals);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleJournalClick = async (id: string) => {
@@ -54,8 +62,8 @@ const LandingPage = () => {
   const addJournal = async () => {
     try {
       const journalData = {
-        title: `Journal ${journals.length + 1}`, 
-        quotes: [''], 
+        title: `Journal ${journals.length + 1}`,
+        quotes: [''],
       };
       const docRef = await addDoc(collection(db, 'journals'), journalData);
       setJournals(prevJournals => [...prevJournals, { id: docRef.id, title: journalData.title }]);
@@ -86,7 +94,6 @@ const LandingPage = () => {
             <Typography variant="body1" paragraph>
               {responseText || 'Explore your journals and start writing!'}
             </Typography>
-            <button onClick={addJournal}>Add a Journal</button>
           </Container>
           {dataFetched && (
             <Container sx={{ p: 3 }}>
