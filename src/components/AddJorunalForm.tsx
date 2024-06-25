@@ -24,7 +24,6 @@ interface AddJournalFormProps {
   open: boolean;
   onClose: () => void;
   onAdd: (id: string, title: string, content: string, emotion: string, stoicQuote: string) => void;
-  updateSidebar: () => void; // Function to update sidebar
 }
 
 const emotions = [
@@ -57,7 +56,7 @@ const emotions = [
   { label: 'Cold', color: 'black', icon: '❄️' },
 ];
 
-const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd, updateSidebar }) => {
+const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedEmotion, setSelectedEmotion] = useState('');
@@ -108,7 +107,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd, u
       const docRef = await addDoc(collection(db, 'journals'), journalData);
       const id = docRef.id;
 
-      // Fetch stoic quote using your original API endpoint
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -129,7 +127,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd, u
 
       setStoicQuote(quote);
       onAdd(id, title, content, selectedEmotion, quote);
-      updateSidebar(); // Update sidebar to reflect new journal
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error fetching data:', error.message, error.stack);
