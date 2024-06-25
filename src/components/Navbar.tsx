@@ -9,7 +9,9 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
+import { UserButton, useUser, useClerk } from '@clerk/clerk-react';
 import AddJournalForm from './AddJorunalForm';
+import '../styles/Navbar.css';
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -18,6 +20,8 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { user, isSignedIn } = useUser();
+  const { signOut } = useClerk();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -50,23 +54,46 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           <div style={{ flexGrow: 1, zIndex: 1 }}> {/* Ensure title is in front */}
             <div className="navbar-title">Journal X</div>
           </div>
-          <IconButton color="inherit" onClick={handleDialogOpen}> {/* Open dialog on click */}
+          <IconButton color="inherit" onClick={handleDialogOpen}>
             <AddIcon />
           </IconButton>
           <IconButton color="inherit">
             <Brightness4Icon />
           </IconButton>
-          <IconButton color="inherit" onClick={handleMenu}>
-            <AccountCircleIcon />
-          </IconButton>
+          {isSignedIn ? (
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: {
+                    width: 40,
+                    height: 40,
+                  },
+                },
+              }}
+              afterSignOutUrl="/"
+            />
+          ) : (
+            <IconButton color="inherit" onClick={handleMenu}>
+              <AccountCircleIcon />
+            </IconButton>
+          )}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem onClick={handleClose}>Profile</MenuItem>
-            <MenuItem onClick={handleClose}>Settings</MenuItem>
-            <MenuItem onClick={handleClose}>Logout</MenuItem>
+            {isSignedIn ? (
+              <>
+                <MenuItem onClick={handleClose}>Profile</MenuItem>
+                <MenuItem onClick={() => signOut()}>Logout</MenuItem>
+              </>
+            ) : (
+              <>
+                <MenuItem onClick={handleClose}>Profile</MenuItem>
+                <MenuItem onClick={handleClose}>Settings</MenuItem>
+                <MenuItem onClick={handleClose}>Logout</MenuItem>
+              </>
+            )}
           </Menu>
         </Toolbar>
       </AppBar>
