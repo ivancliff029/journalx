@@ -46,7 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
 
   return (
     <>
-      <AppBar position="static">
+      <AppBar position="fixed" className="navbar">
         <Toolbar>
           <IconButton size="large" edge="start" color="inherit" aria-label="menu" onClick={toggleSidebar}>
             <MenuIcon />
