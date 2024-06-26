@@ -18,7 +18,7 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import BookIcon from '@mui/icons-material/Book';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { db } from '../lib/firebase';
-import { addDoc,collection } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 
 interface AddJournalFormProps {
   open: boolean;
@@ -97,7 +97,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
     setLoading(true);
 
     try {
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -116,8 +115,17 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
 
       console.log('Received stoic quote:', quote);
 
+      const docRef = await addDoc(collection(db, 'journals'), {
+        title,
+        content,
+        emotion: selectedEmotion,
+        stoicQuote: quote,
+        activity: selectedActivity,
+        timestamp: new Date(),
+      });
+
       setStoicQuote(quote);
-      onAdd(id, title, content, selectedEmotion, quote);
+      onAdd(docRef.id, title, content, selectedEmotion, quote);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error fetching data:', error.message, error.stack);
