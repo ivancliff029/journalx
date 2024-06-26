@@ -11,11 +11,10 @@ import { collection, getDocs, doc, getDoc, addDoc, onSnapshot } from 'firebase/f
 
 const LandingPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [responseText, setResponseText] = useState('');
-  const [journalTitle, setJournalTitle] = useState('');
   const [dataFetched, setDataFetched] = useState(false);
   const [journals, setJournals] = useState<{ id: string, title: string }[]>([]);
   const [journalId, setJournalId] = useState('');
+  const [messages, setMessages] = useState<Array<{ role: string, parts: Array<{ text: string }> }>>([]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -49,8 +48,7 @@ const LandingPage = () => {
       if (journalDoc.exists()) {
         const journalData = journalDoc.data();
         setJournalId(id);
-        setJournalTitle(journalData.title);
-        setResponseText(journalData.quotes[0]);
+        setMessages(journalData.history || []);
       }
     } catch (error) {
       console.error('Error fetching journal data:', error);
@@ -59,18 +57,6 @@ const LandingPage = () => {
     }
   };
 
-  const addJournal = async () => {
-    try {
-      const journalData = {
-        title: `Journal ${journals.length + 1}`,
-        quotes: [''],
-      };
-      const docRef = await addDoc(collection(db, 'journals'), journalData);
-      setJournals(prevJournals => [...prevJournals, { id: docRef.id, title: journalData.title }]);
-    } catch (error) {
-      console.error('Error adding journal:', error);
-    }
-  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -87,17 +73,17 @@ const LandingPage = () => {
             transition: 'margin-left 0.3s',
           }}
         >
-          <Container sx={{ p: 3 }}>
+          <Container>
             <Typography variant="h2" gutterBottom>
-              {journalTitle || 'Welcome to Journal X'}
+              'Welcome to Journal X'
             </Typography>
             <Typography variant="body1" paragraph>
-              {responseText || 'Explore your journals and start writing!'}
+              'Explore your journals and start writing!'
             </Typography>
           </Container>
           {dataFetched && (
             <Container sx={{ p: 3 }}>
-              <Chat setResponseText={setResponseText} journalId={journalId} />
+              <Chat journalId={journalId} messages={messages} />
             </Container>
           )}
         </Box>

@@ -97,15 +97,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
     setLoading(true);
 
     try {
-      const journalData = {
-        title,
-        description: content,
-        emotion: selectedEmotion,
-        activity: selectedActivity,
-      };
-
-      const docRef = await addDoc(collection(db, 'journals'), journalData);
-      const id = docRef.id;
 
       const response = await fetch('/api/chat', {
         method: 'POST',
