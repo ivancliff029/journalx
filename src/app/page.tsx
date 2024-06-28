@@ -2,22 +2,30 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import RightSidebar from '@/components/RightSidebar';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import Chat from '@/components/Chat';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, getDoc, addDoc, onSnapshot } from 'firebase/firestore';
 
 const LandingPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
   const [journals, setJournals] = useState<{ id: string, title: string }[]>([]);
   const [journalId, setJournalId] = useState('');
   const [messages, setMessages] = useState<Array<{ role: string, parts: Array<{ text: string }> }>>([]);
+  const [selectedJournal, setSelectedJournal] = useState<{ title: string, description: string } | null>(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleRightSidebar = () => {
+    setRightSidebarOpen(!rightSidebarOpen);
   };
 
   useEffect(() => {
@@ -49,6 +57,11 @@ const LandingPage = () => {
         const journalData = journalDoc.data();
         setJournalId(id);
         setMessages(journalData.history || []);
+        setSelectedJournal({
+          title: journalData.title,
+          description: journalData.description || 'No description available'
+        });
+        setRightSidebarOpen(true);
       }
     } catch (error) {
       console.error('Error fetching journal data:', error);
@@ -56,7 +69,6 @@ const LandingPage = () => {
       setDataFetched(true);
     }
   };
-
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -70,16 +82,24 @@ const LandingPage = () => {
             flexDirection: 'column',
             justifyContent: 'center',
             marginLeft: sidebarOpen ? '240px' : '0px',
-            transition: 'margin-left 0.3s',
+            marginRight: rightSidebarOpen ? '300px' : '0px',
+            transition: 'margin 0.3s',
           }}
         >
           <Container>
             <Typography variant="h2" gutterBottom>
-              'Welcome to Journal X'
+              Welcome to Journal X
             </Typography>
             <Typography variant="body1" paragraph>
-              'Explore your journals and start writing!'
+              Explore your journals and start writing!
             </Typography>
+            <Button 
+              variant="contained" 
+              onClick={toggleRightSidebar}
+              sx={{ mt: 2 }}
+            >
+              {rightSidebarOpen ? 'Close' : 'Open'} Journal Details
+            </Button>
           </Container>
           {dataFetched && (
             <Container sx={{ p: 3 }}>
@@ -87,6 +107,11 @@ const LandingPage = () => {
             </Container>
           )}
         </Box>
+        <RightSidebar
+          open={rightSidebarOpen}
+          onClose={() => setRightSidebarOpen(false)}
+          journal={selectedJournal}
+        />
       </Box>
     </Box>
   );
