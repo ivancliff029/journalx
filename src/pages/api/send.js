@@ -40,9 +40,6 @@ export default async function handler(req, res) {
       const result = await chatSession.sendMessage(input);
       const responseText = await result.response.text();
 
-      journalData.history.push({ role: "user", parts: [ { text: input}] });
-      journalData.history.push({ role: "model", parts: [ { text: responseText}] });
-
       await updateDoc(journalRef, {
         history: journalData.history,
         quotes: arrayUnion(responseText)
@@ -50,8 +47,7 @@ export default async function handler(req, res) {
 
       res.status(200).json({
         response: responseText,
-        sessionId: chatSession.id,
-        history: chatSession.history
+        history: journalData.history
       });
     } catch (error) {
       console.error('Error communicating with Gemini:', error);

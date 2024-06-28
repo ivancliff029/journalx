@@ -42,11 +42,7 @@ const Chat: React.FC<ChatProps> = ({  journalId, messages: initialMessages }) =>
       }
 
       const data = await response.json();
-      const newMessages = [
-        ...messages,
-        { role: "user", parts: [{ text: userInput }] },
-        { role: "model", parts: [{ text: data.response }] }
-      ];
+      const newMessages = data.history;
       setMessages(newMessages);
       setUserInput('');
     } catch (error) {

@@ -110,22 +110,6 @@ const AddJournalForm: React.FC<AddJournalFormProps> = ({ open, onClose, onAdd })
         throw new Error(errorData.details || 'Error communicating with Gemini');
       }
 
-      const result = await response.json();
-      const quote: string = result.response;
-
-      console.log('Received stoic quote:', quote);
-
-      const docRef = await addDoc(collection(db, 'journals'), {
-        title,
-        content,
-        emotion: selectedEmotion,
-        stoicQuote: quote,
-        activity: selectedActivity,
-        timestamp: new Date(),
-      });
-
-      setStoicQuote(quote);
-      onAdd(docRef.id, title, content, selectedEmotion, quote);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error fetching data:', error.message, error.stack);
