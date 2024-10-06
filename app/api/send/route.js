@@ -15,7 +15,7 @@ const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
 });
 
-const generationConfig: GenerationConfig = {
+const generationConfig= {
   temperature: 1,
   topP: 0.95,
   topK: 64,
@@ -24,7 +24,7 @@ const generationConfig: GenerationConfig = {
 };
 
 // Correctly typed API handler for POST requests
-export async function POST(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req, res) {
   try {
     const { input, journalId } = req.body;
 
@@ -56,18 +56,18 @@ export async function POST(req: NextApiRequest, res: NextApiResponse) {
       response: responseText,
       history: journalData.history || [],
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error communicating with Gemini:', error);
     res.status(500).json({ error: 'Error communicating with Gemini', details: error.message, stack: error.stack });
   }
 }
 
 // Explicitly handle GET requests with a 405 Method Not Allowed response
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
+export async function GET(req, res) {
   res.status(405).json({ error: 'Method not allowed' });
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req, res) {
   if (req.method === 'POST') {
     return POST(req, res);
   } else {
