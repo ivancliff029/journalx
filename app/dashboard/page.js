@@ -1,3 +1,6 @@
+import ProfitsAndLoss from "../components/ProfitsAndLoss";
+import Navbar from "../components/Navbar";
+
 export default function Dashboard(){
     const tradeData = [
         {label:"Total Trade", value: 23},
@@ -12,7 +15,8 @@ export default function Dashboard(){
     ]
     return (
         <>
-        <div> 
+        <Navbar />
+        <div className="p-10"> 
             <div className="grid grid-cols-3">
                 {
                     tradeData.map((trade, index) => (
@@ -26,7 +30,7 @@ export default function Dashboard(){
             <div className="flex gap-4 p-4">
                 <div className="w-3/5 bg-blue-200 p-4 rounded">
                     <h2 className="text-xl font-bold">Profits and Loss Charts</h2>
-
+                    <ProfitsAndLoss />
                 </div>
                 <div className="w-2/5 bg-blue-200 p-4 rounded">
                     <h2 className="text-xl font-bold">Trade History</h2>
