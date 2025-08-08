@@ -1,13 +1,22 @@
+"use client";
 import Navbar from "../components/Navbar"
+import { useState, useEffect } from "react";
+import { db } from "../lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export default function Journals() {
-    const journals = [
-        { id: 1, title: "Journal 1", content:"Content of journal"},
-        { id: 2, title: "Journal 2:", content:"Content of journal 2"},
-        { id: 3, title: "Journal 3", content:"Content of journal 3"},
-        { id: 4, title: "Journal 4", content:"Content of journal 4"},
-        { id: 5, title: "Journal 5", content: "Content of journal 5"},
-    ]
+    const [journals, setJournals] = useState([]);
+    useEffect(() => {
+        const fetchJournals = async () => {
+            const querySnapshot = await getDocs(collection(db, "journals"));
+            const journalData = querySnapshot.docs.map( doc=>({
+                id: doc.id,
+                ...doc.data()
+            }))
+            setJournals(journalData);
+        }
+        fetchJournals();
+    }, []);
     return(
     <>
     <Navbar />
@@ -17,10 +26,15 @@ export default function Journals() {
             </div>
             <div className="">
                 {journals.map((journal) => (
-                    <div key={journal.id} className="border p-4 my-2 rounded-lg shadow-md">
-                        <h2 className="text-xl font-semibold">{journal.id}</h2>
-                        <h3 className="text-lg">{journal.title}</h3>
-                        <p>{journal.content}</p>
+                    <div key={journal.id} className="border p-4 mb-4 rounded">
+                        <h2 className="text-xl font-bold">{journal.entrySetup}</h2>
+                        <p>{journal.journalContent}</p>
+                        <p>Mood Before: {journal.moodBefore}</p>
+                        <p>Mood After: {journal.moodAfter}</p>
+                        <p>Profit/Loss: {journal.profitloss}</p>
+                        {journal.screenshot && (
+                            <img src={journal.screenshot} alt="Screenshot" className="w-full h-auto mt-2" />
+                        )}
                     </div>
                 ))}
             </div>
