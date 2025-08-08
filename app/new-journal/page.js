@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Navbar from "../components/Navbar";
+import { db } from "../lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 export default function NewJournalPage() {
 
@@ -20,12 +22,21 @@ export default function NewJournalPage() {
     }));
     console.log(formData);
   };
+  const handleSubmit = async (e) => {
+    try{
+      e.preventDefault();
+      const docRef = await addDoc(collection(db,"journals"), formData);
+      console.log("Document written with ID: ", docRef.id);
+    }catch(error){
+      console.error("Error adding document: ", error);
+    }
+  };
   return (
     <>
       <Navbar />
       <div className="p-4 bg-gray-100 min-h-screen dark:bg-gray-800 dark:text-white item-center justify-center">
       <h1 className="text-4xl font-bold">New Journal Entry</h1>
-      <form>
+      <form onSubmit={handleSubmit}>
         <label>
           Entry Setup:
           <input 
