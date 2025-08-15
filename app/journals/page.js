@@ -12,6 +12,7 @@ export default function Journals() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [expandedJournalId, setExpandedJournalId] = useState(null);
 
   const [formData, setFormData] = useState({
     entrySetup: "",
@@ -117,6 +118,10 @@ export default function Journals() {
     });
     setImageFile(null);
     setImagePreview(null);
+  };
+
+  const toggleJournalExpand = (id) => {
+    setExpandedJournalId(expandedJournalId === id ? null : id);
   };
 
   return (
@@ -280,7 +285,7 @@ export default function Journals() {
         )}
 
         {/* Journals List */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {journals.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">No journal entries yet. Create your first one!</p>
@@ -289,59 +294,89 @@ export default function Journals() {
             journals.map((journal) => (
               <div
                 key={journal.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-200"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                <div 
+                  className="p-4 cursor-pointer flex justify-between items-center"
+                  onClick={() => toggleJournalExpand(journal.id)}
+                >
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                       {journal.entrySetup}
                     </h2>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(journal.createdAt).toLocaleDateString()}
-                    </span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(journal.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </div>
-
-                  <p className="text-gray-600 dark:text-gray-300 mb-4 whitespace-pre-line">
-                    {journal.journalContent}
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood Before</span>
-                      <p className="capitalize">{journal.moodBefore}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood After</span>
-                      <p className="capitalize">{journal.moodAfter}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit/Loss</span>
-                      <p className={journal.profitloss >= 0 ? "text-green-600" : "text-red-600"}>
-                        ${journal.profitloss}
-                      </p>
-                    </div>
-                  </div>
-
-                  {journal.screenshot && (
-                    <div className="mb-4">
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Screenshot</span>
-                      <img
-                        src={journal.screenshot}
-                        alt="Trade screenshot"
-                        className="max-w-full h-auto rounded-md border border-gray-200 dark:border-gray-700"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleDelete(journal.id)}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/40"
-                    >
-                      Delete
-                    </button>
+                  <div className="text-gray-500 dark:text-gray-400">
+                    {expandedJournalId === journal.id ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    )}
                   </div>
                 </div>
+
+                {expandedJournalId === journal.id && (
+                  <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-4">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Journal Content</h3>
+                      <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line mb-4">
+                        {journal.journalContent}
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood Before</span>
+                          <p className="capitalize">{journal.moodBefore}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood After</span>
+                          <p className="capitalize">{journal.moodAfter}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit/Loss</span>
+                          <p className={journal.profitloss >= 0 ? "text-green-600" : "text-red-600"}>
+                            ${journal.profitloss}
+                          </p>
+                        </div>
+                      </div>
+
+                      {journal.screenshot && (
+                        <div className="mb-4">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Screenshot</span>
+                          <img
+                            src={journal.screenshot}
+                            alt="Trade screenshot"
+                            className="max-w-full h-auto rounded-md border border-gray-200 dark:border-gray-700"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(journal.id);
+                          }}
+                          className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/40"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
