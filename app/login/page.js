@@ -17,7 +17,7 @@ export default function Login() {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             console.log("User logged in:", userCredential.user);
-            router.push("/new-journal");
+            router.push("/journals");
         } catch (err) {
             setError(err.message);
         }
