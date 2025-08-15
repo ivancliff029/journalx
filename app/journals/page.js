@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import { db, storage, auth } from "../lib/firebase";
-import { collection, addDoc, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, deleteDoc, query, where } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function Journals() {
+  const [user, loadingAuth] = useAuthState(auth);
   const [journals, setJournals] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,20 +24,39 @@ export default function Journals() {
     profitloss: "",
     screenshot: "",
     createdAt: new Date().toISOString(),
-    userId: auth.currentUser?.uid || ""
+    userId: user?.uid || ""
   });
 
   useEffect(() => {
-    const fetchJournals = async () => {
-      const querySnapshot = await getDocs(collection(db, "journals"));
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        userId: user.uid
+      }));
+      fetchJournals();
+    }
+  }, [user]);
+
+  const fetchJournals = async () => {
+    if (!user) return;
+    
+    try {
+      const q = query(
+        collection(db, "journals"),
+        where("userId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(q);
       const journalData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      // Sort by date (newest first)
+      journalData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setJournals(journalData);
-    };
-    fetchJournals();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching journals: ", error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,6 +85,8 @@ export default function Journals() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return;
+    
     setIsLoading(true);
 
     try {
@@ -76,13 +99,14 @@ export default function Journals() {
         ...formData,
         screenshot: imageUrl,
         createdAt: new Date().toISOString(),
-        userId: auth.currentUser?.uid
+        userId: user.uid
       });
 
       setJournals(prev => [...prev, {
         id: docRef.id,
         ...formData,
-        screenshot: imageUrl
+        screenshot: imageUrl,
+        createdAt: new Date().toISOString()
       }]);
 
       resetForm();
@@ -114,7 +138,7 @@ export default function Journals() {
       profitloss: "",
       screenshot: "",
       createdAt: new Date().toISOString(),
-      userId: auth.currentUser?.uid || ""
+      userId: user?.uid || ""
     });
     setImageFile(null);
     setImagePreview(null);
@@ -124,12 +148,38 @@ export default function Journals() {
     setExpandedJournalId(expandedJournalId === id ? null : id);
   };
 
+  if (loadingAuth) {
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <p>Loading user data...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <p>Please log in to view your journals</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Trading Journals</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Your Trading Journals</h1>
           <button
             onClick={() => setIsModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
