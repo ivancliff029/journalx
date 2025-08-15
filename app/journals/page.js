@@ -1,7 +1,7 @@
 "use client";
 import Navbar from "../components/Navbar"
 import { useState, useEffect } from "react";
-import { db } from "../lib/firebase";
+import { db,auth } from "../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
 export default function Journals() {
@@ -17,6 +17,14 @@ export default function Journals() {
         }
         fetchJournals();
     }, []);
+
+    const handleEdit =  (id) => {
+        alert(`Id {id} was selected`);
+    }
+    const handleDelete = (id) => {
+        alert(`Id {id} was selected`);
+    }
+
     return(
     <>
     <Navbar />
@@ -35,10 +43,19 @@ export default function Journals() {
                         {journal.screenshot && (
                             <img src={journal.screenshot} alt="Screenshot" className="w-full h-auto mt-2" />
                         )}
+                        <div>
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <button onClick={() => handleEdit(journal.id)} className="bg-blue-500 text-white p-2 rounded">Edit</button>
+                                </div>
+                                <div>
+                                    <button onClick={() => handleDelete(journal.id)} className="bg-red-500 text-white p-2 rounded">Delete</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
-            
         </div>
     </>
     );
