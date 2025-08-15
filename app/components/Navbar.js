@@ -79,7 +79,6 @@ export default function Navbar() {
                     {/* Show when logged in */}
                     {user ? (
                         <>
-                            <Link href="/new-journal" className="block md:inline-block px-4 py-2 hover:bg-gray-700 rounded">New Journal</Link>
                             <Link href="/journals" className="block md:inline-block px-4 py-2 hover:bg-gray-700 rounded">Journals</Link>
                             <Link href="/dashboard" className="block md:inline-block px-4 py-2 hover:bg-gray-700 rounded">Dashboard</Link>
                             
