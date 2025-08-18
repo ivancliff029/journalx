@@ -215,6 +215,61 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
             <FiUser className="mr-2" /> Trading Profile
           </h1>
+          
+          {/* User Information Section */}
+          <div className="mb-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Personal Information</h2>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Username</p>
+                  <p className="text-gray-800 dark:text-white">{formData.username || 'Not set'}</p>
+                </div>
+                <button 
+                  onClick={() => openEditModal('username')}
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <FiEdit />
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                  <p className="text-gray-800 dark:text-white">{formData.email || 'Not set'}</p>
+                </div>
+                <span className="text-gray-400 text-sm">(Managed by auth provider)</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                  <p className="text-gray-800 dark:text-white">{formData.phone || 'Not set'}</p>
+                </div>
+                <button 
+                  onClick={() => openEditModal('phone')}
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <FiEdit />
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Trading Experience</p>
+                  <p className="text-gray-800 dark:text-white capitalize">{formData.tradingExperience || 'Not set'}</p>
+                </div>
+                <button 
+                  onClick={() => openEditModal('tradingExperience')}
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <FiEdit />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit}>
             {/* Avatar Section */}
             <div className="mb-8">
@@ -397,59 +452,6 @@ export default function ProfilePage() {
               </button>
             </div>
           </form>
-          {/* User Information Section */}
-          <div className="mb-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Personal Information</h2>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Username</p>
-                  <p className="text-gray-800 dark:text-white">{formData.username || 'Not set'}</p>
-                </div>
-                <button 
-                  onClick={() => openEditModal('username')}
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  <FiEdit />
-                </button>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                  <p className="text-gray-800 dark:text-white">{formData.email || 'Not set'}</p>
-                </div>
-                <span className="text-gray-400 text-sm">(Managed by auth provider)</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                  <p className="text-gray-800 dark:text-white">{formData.phone || 'Not set'}</p>
-                </div>
-                <button 
-                  onClick={() => openEditModal('phone')}
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  <FiEdit />
-                </button>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Trading Experience</p>
-                  <p className="text-gray-800 dark:text-white capitalize">{formData.tradingExperience || 'Not set'}</p>
-                </div>
-                <button 
-                  onClick={() => openEditModal('tradingExperience')}
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  <FiEdit />
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
