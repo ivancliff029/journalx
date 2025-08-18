@@ -178,7 +178,7 @@ export default function Dashboard() {
                         <div>
                           <h3 className="font-medium text-gray-800 dark:text-white">{trade.label}</h3>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{trade.time}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">On {trade.createdAt}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">Created at {trade.createdAt}</p>
                         </div>
                         <p className={`font-medium ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                           {trade.profit >= 0 ? `+$${trade.profit.toFixed(2)}` : `-$${Math.abs(trade.profit).toFixed(2)}`}
