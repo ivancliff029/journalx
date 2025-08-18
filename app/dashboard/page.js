@@ -135,7 +135,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Current Balance</p>
-              <p className={`text-2xl font-bold ${stats.currentBalance >= stats.initialBalance ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <p className={`text-2xl font-bold ${stats.currentBalance >= stats.initialBalance ? 'text-green-600 dark:text-green-400' : 'text-green-600 dark:text-green-400'}`}>
                 ${stats.currentBalance.toFixed(2)}
               </p>
             </div>
