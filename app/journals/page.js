@@ -496,7 +496,7 @@ export default function Journals() {
                         </div>
                       </div>
 
-                      {journal.screenshot && (
+                      {journal.screenshot ? (
                         <div className="mb-4">
                           <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Screenshot</span>
                           <img
@@ -504,6 +504,10 @@ export default function Journals() {
                             alt="Trade screenshot"
                             className="max-w-full h-auto rounded-md border border-gray-200 dark:border-gray-700"
                           />
+                        </div>
+                      ):(
+                        <div className="mb-4">
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">No Screenshot Available</span>
                         </div>
                       )}
 
