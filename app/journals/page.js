@@ -6,6 +6,7 @@ import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import {FaChartLine } from 'react-icons/fa';
 
 export default function Journals() {
   const [user, loadingAuth] = useAuthState(auth);
@@ -464,6 +465,9 @@ export default function Journals() {
                   <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="pt-4">
                       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Journal Content</h3>
+                      <span>
+                        <FaChartLine size={28} />
+                      </span>
                       <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line mb-4">
                         {journal.journalContent}
                       </p>
@@ -559,6 +563,10 @@ export default function Journals() {
 
                       {/* Action Buttons */}
                       <div className="flex justify-end space-x-2">
+                        <button className="flex items-center gap-2 px-3 py-2 border rounded">
+                          <FaChartLine size={20} />
+                          <span>Analyze with AI</span>
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
