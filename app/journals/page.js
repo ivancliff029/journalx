@@ -6,7 +6,7 @@ import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import {FaChartLine } from 'react-icons/fa';
+import {FaChartLine, FaPen, FaBook } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 
 export default function Journals() {
@@ -266,16 +266,19 @@ export default function Journals() {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Your Trading Journals</h1>
+          <div className="flex items-center">
+            <span><FaBook className="mr-2" /></span>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Your Trading Journals</h2>
+          </div>
           <button
             onClick={() => {
               resetForm();
               setEditingJournalId(null);
               setIsModalOpen(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+            className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
           >
-            + Entry
+            <span><FaPen className="mr-2" /></span>New Journal
           </button>
         </div>
 
