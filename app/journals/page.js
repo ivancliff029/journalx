@@ -337,7 +337,6 @@ export default function Journals() {
                       <input
                         type="text"
                         name="moodBefore"
-                        required
                         placeholder="How did you feel before the trade?"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         value={formData.moodBefore}
@@ -352,7 +351,6 @@ export default function Journals() {
                       <input
                         type="text"
                         name="moodAfter"
-                        required
                         placeholder="How did you feel after the trade?"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         value={formData.moodAfter}
