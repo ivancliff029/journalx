@@ -268,7 +268,7 @@ export default function Journals() {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center">
             <span><FaBook className="mr-2" /></span>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Your Trading Journals</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Journals</h2>
           </div>
           <button
             onClick={() => {
@@ -362,9 +362,14 @@ export default function Journals() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Profit/Loss ($)
+                     <label
+                      className={`text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ${
+                        !journals.screenshot ? "hidden" : ""
+                      }`}
+                      >
+                      Profit/Loss ($)
                       </label>
+
                       <input
                         type="number"
                         name="profitloss"
@@ -451,9 +456,16 @@ export default function Journals() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`text-sm font-medium ${journal.profitloss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {journal.profitloss >= 0 ? '+' : ''}${journal.profitloss}
+                    <span
+                    className={`text-sm font-medium ${
+                      journal.profitloss >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
+                    >
+                      {journal.profitloss >= 0 ? "+" : ""}
+                      {journal.screenshot && "$"}
+                      {journal.profitloss}
                     </span>
+
                     <div className="text-gray-500 dark:text-gray-400">
                       {expandedJournalId === journal.id ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -480,20 +492,24 @@ export default function Journals() {
                       </p>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood Before</span>
-                          <p className="text-gray-800 dark:text-gray-200">{journal.moodBefore}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood After</span>
-                          <p className="text-gray-800 dark:text-gray-200">{journal.moodAfter}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit/Loss</span>
-                          <p className={journal.profitloss >= 0 ? "text-green-600" : "text-red-600"}>
-                            ${journal.profitloss}
-                          </p>
-                        </div>
+                        { !journal.screenshot ? (
+                          <>
+                            <div>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden">Mood Before</span>
+                              <p className="text-gray-800 dark:text-gray-200">{journal.moodBefore}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden">Mood After</span>
+                              <p className="text-gray-800 dark:text-gray-200">{journal.moodAfter}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden">Profit/Loss</span>
+                              <p className={journal.profitloss >= 0 ? "text-green-600" : "text-red-600"}>
+                                ${journal.profitloss}
+                              </p>
+                            </div>
+                          </>
+                        ): null}
                       </div>
 
                       {journal.screenshot ? (
