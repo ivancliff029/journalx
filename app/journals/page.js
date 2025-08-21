@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import {FaChartLine } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 
 export default function Journals() {
   const [user, loadingAuth] = useAuthState(auth);
@@ -19,6 +20,7 @@ export default function Journals() {
   const [editingJournalId, setEditingJournalId] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [newComment, setNewComment] = useState("");
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     entrySetup: "",
@@ -42,6 +44,10 @@ export default function Journals() {
     }
   }, [user]);
 
+  const analyzeWithAI = async (journalId) => {
+    {/* open the journal entry in /analyze/${journalId} */}
+    router.push(`/journals/analyze/${journalId}`);
+  };
   const fetchJournals = async () => {
     if (!user) return;
     
@@ -269,7 +275,7 @@ export default function Journals() {
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
           >
-            + New Entry
+            + Entry
           </button>
         </div>
 
@@ -563,7 +569,7 @@ export default function Journals() {
 
                       {/* Action Buttons */}
                       <div className="flex justify-end space-x-2">
-                        <button className="flex items-center gap-2 px-3 py-2 border rounded">
+                        <button className="flex items-center gap-2 px-3 py-2 border rounded" onClick={() => {analyzeWithAI(journal.id)}}>
                           <FaChartLine size={20} />
                           <span>Analyze with AI</span>
                         </button>
