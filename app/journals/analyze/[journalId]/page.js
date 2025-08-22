@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import Navbar from "../../../components/Navbar"
 
 export default async function AnalyzeTradeDetails({ params }) {
     const { journalId } = await params;
@@ -16,6 +17,8 @@ export default async function AnalyzeTradeDetails({ params }) {
     const journal = await res.json();
 
     return (
+        <>
+        <Navbar />
         <div className="max-w-4xl mx-auto p-6 space-y-6">
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <h1 className="text-3xl font-bold mb-2 text-gray-800">
@@ -35,6 +38,8 @@ export default async function AnalyzeTradeDetails({ params }) {
                 <AnalysisSection journal={journal} />
             </Suspense>
         </div>
+        </>
+        
     );
 }
 

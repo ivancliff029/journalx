@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { db, storage } from "../../../lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const openai = new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_GPT_KEY,
-});
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function GET(request, { params }) {
     try {
@@ -24,6 +23,7 @@ export async function GET(request, { params }) {
         if (journalData.analysis) {
             return NextResponse.json({
                 ...journalData,
+                id: journalId,
                 hasAnalysis: true
             });
         }
@@ -39,7 +39,7 @@ export async function GET(request, { params }) {
                     screenshot = await getDownloadURL(imageRef);
                 }
 
-                // Analyze the image with OpenAI
+                // Analyze the image with Gemini
                 const analysis = await analyzeTradeImage(screenshot);
                 
                 // Save analysis to Firebase
@@ -54,6 +54,7 @@ export async function GET(request, { params }) {
                 return NextResponse.json({
                     ...journalData,
                     ...analysisData,
+                    id: journalId,
                     hasAnalysis: true
                 });
 
@@ -75,6 +76,7 @@ export async function GET(request, { params }) {
                 return NextResponse.json({
                     ...journalData,
                     ...analysisData,
+                    id: journalId,
                     hasAnalysis: true,
                     analysisWarning: analysisError.message
                 });
@@ -83,6 +85,7 @@ export async function GET(request, { params }) {
 
         return NextResponse.json({
             ...journalData,
+            id: journalId,
             hasAnalysis: false
         });
 
@@ -94,15 +97,9 @@ export async function GET(request, { params }) {
 
 async function analyzeTradeImage(screenshot) {
     try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini", // Using mini version to reduce costs
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: `Please analyze this trading screenshot/chart and provide detailed insights on trading psychology and performance improvement. Focus on:
+        const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+        
+        const prompt = `Please analyze this trading screenshot/chart and provide detailed insights on trading psychology and performance improvement. Focus on:
 
 1. **Trade Analysis**: What do you observe about the trade setup, entry/exit points, and overall execution?
 
@@ -116,38 +113,42 @@ async function analyzeTradeImage(screenshot) {
 
 6. **Future Strategy**: Actionable steps for better trading psychology and discipline.
 
-Please provide a comprehensive analysis in a structured format that will help improve the trader's psychological approach to trading.`
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: screenshot
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens: 1000 // Reduced to lower costs
-        });
+Please provide a comprehensive analysis in a structured format that will help improve the trader's psychological approach to trading.`;
 
-        return response.choices[0].message.content;
-    } catch (error) {
-        console.error("OpenAI API Error:", error);
+        // For Gemini, we need to fetch the image and convert it to base64
+        const imageResponse = await fetch(screenshot);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const imageBase64 = Buffer.from(imageBuffer).toString('base64');
         
-        if (error.status === 429) {
-            throw new Error("OpenAI API quota exceeded. Please check your billing details or try again later.");
-        } else if (error.status === 401) {
-            throw new Error("OpenAI API key is invalid or expired.");
-        } else if (error.status === 400) {
-            throw new Error("Invalid request to OpenAI API. Please check the image format.");
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    data: imageBase64,
+                    mimeType: imageResponse.headers.get('content-type') || 'image/png'
+                }
+            }
+        ]);
+        
+        const response = await result.response;
+        return response.text();
+    } catch (error) {
+        console.error("Gemini API Error:", error);
+        
+        if (error.message?.includes("QUOTA_EXCEEDED") || error.message?.includes("429")) {
+            throw new Error("Gemini API quota exceeded. Please check your billing details or try again later.");
+        } else if (error.message?.includes("API_KEY") || error.message?.includes("401")) {
+            throw new Error("Gemini API key is invalid or expired.");
+        } else if (error.message?.includes("INVALID_ARGUMENT") || error.message?.includes("400")) {
+            throw new Error("Invalid request to Gemini API. Please check the image format.");
         } else {
-            throw new Error(`OpenAI API error: ${error.message}`);
+            throw new Error(`Gemini API error: ${error.message}`);
         }
     }
 }
 
 function getFallbackAnalysis(errorMessage) {
-    if (errorMessage.includes("quota exceeded")) {
+    if (errorMessage.includes("quota exceeded") || errorMessage.includes("QUOTA_EXCEEDED")) {
         return `## Trading Psychology Analysis (Generated Template)
 
 **Note**: AI analysis is temporarily unavailable due to API limits. Here's a general framework for analyzing your trading psychology:
