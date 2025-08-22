@@ -2,11 +2,13 @@
 import ProfitsAndLoss from "../components/ProfitsAndLoss";
 import Navbar from "../components/Navbar";
 import { useEffect, useState } from 'react';
-import { db } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
-import { auth } from "../lib/firebase";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
+  const [user, loadingAuth] = useAuthState(auth);
   const [stats, setStats] = useState({
     totalTrades: 0,
     profitableTrades: 0,
@@ -17,6 +19,16 @@ export default function Dashboard() {
   });
   const [recentTrades, setRecentTrades] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [journals, setJournals] = useState([]);
+  const router = useRouter();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [tradesPerPage] = useState(5);
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredTrades, setFilteredTrades] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +40,7 @@ export default function Dashboard() {
         const settingsRef = doc(db, "userSettings", userId);
         const settingsSnap = await getDoc(settingsRef);
         let initialBalance = 100; // Default fallback
-        
+
         if (settingsSnap.exists()) {
           const settingsData = settingsSnap.data();
           initialBalance = settingsData.accountBalance || 100;
@@ -37,7 +49,7 @@ export default function Dashboard() {
         // Fetch all trades
         const q = query(collection(db, "journals"), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
-        
+
         let total = 0;
         let profitable = 0;
         let losing = 0;
@@ -47,10 +59,10 @@ export default function Dashboard() {
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const profitLoss = parseFloat(data.profitloss) || 0;
-          
+
           total++;
           netProfit += profitLoss;
-          
+
           if (profitLoss >= 0) {
             profitable++;
           } else {
@@ -63,13 +75,18 @@ export default function Dashboard() {
             label: data.entrySetup || "Trade",
             time: new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             profit: profitLoss,
-            createdAt: data.createdAt
+            createdAt: data.createdAt,
+            // Add more fields for search functionality
+            symbol: data.symbol || '',
+            notes: data.notes || ''
           });
         });
 
-        // Sort trades by creation date (most recent first) and take top 5
+        // Sort trades by creation date (most recent first)
         trades.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        const recentFiveTrades = trades.slice(0, 5);
+        
+        setRecentTrades(trades);
+        setFilteredTrades(trades);
 
         // Calculate current balance = initial balance + net profit/loss
         const currentBalance = initialBalance + netProfit;
@@ -82,8 +99,6 @@ export default function Dashboard() {
           initialBalance: initialBalance,
           currentBalance: currentBalance
         });
-
-        setRecentTrades(recentFiveTrades);
       } catch (error) {
         console.error("Error fetching data: ", error);
       } finally {
@@ -93,6 +108,58 @@ export default function Dashboard() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchJournals();
+    } else {
+      setJournals([]);
+    }
+  }, [user]);
+
+  // Filter trades based on search term
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredTrades(recentTrades);
+    } else {
+      const filtered = recentTrades.filter(trade => 
+        trade.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trade.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (trade.notes && trade.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredTrades(filtered);
+    }
+    setCurrentPage(1); // Reset to first page when search changes
+  }, [searchTerm, recentTrades]);
+
+  const fetchJournals = async () => {
+    if (!user) return;
+
+    try {
+      const q = query(
+        collection(db, "journals"),
+        where("userId", "==", user.uid)
+      );
+      const querySnapshot = await getDocs(q);
+      const journalData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      // Sort by date (newest first)
+      journalData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setJournals(journalData);
+    } catch (error) {
+      console.error("Error fetching journals: ", error);
+    }
+  };
+
+  // Pagination logic
+  const indexOfLastTrade = currentPage * tradesPerPage;
+  const indexOfFirstTrade = indexOfLastTrade - tradesPerPage;
+  const currentTrades = filteredTrades.slice(indexOfFirstTrade, indexOfLastTrade);
+  const totalPages = Math.ceil(filteredTrades.length / tradesPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const statCards = [
     { label: "Total Trades", value: stats.totalTrades, color: "bg-indigo-100 dark:bg-indigo-900/30", textColor: "text-indigo-600 dark:text-indigo-400" },
@@ -108,7 +175,7 @@ export default function Dashboard() {
       <Navbar />
       <div className="p-4 md:p-8 max-w-7xl mx-auto">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-6">Trading Dashboard</h1>
-        
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           {statCards.map((card, index) => (
@@ -140,11 +207,11 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          
+
           {/* Performance indicator */}
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Return: 
+              Return:
               <span className={`ml-1 font-semibold ${stats.currentBalance >= stats.initialBalance ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {stats.initialBalance > 0 ? (((stats.currentBalance - stats.initialBalance) / stats.initialBalance) * 100).toFixed(2) : '0.00'}%
               </span>
@@ -165,32 +232,129 @@ export default function Dashboard() {
           {/* Recent Trades */}
           <div className="lg:w-1/3">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 h-full">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Trades</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Recent Trades</h2>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search trades..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-3 pr-10 py-1.5 text-sm border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <svg
+                    className="w-4 h-4 absolute right-2.5 top-2.5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              
               {loading ? (
                 <div className="flex items-center justify-center h-32">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : recentTrades.length > 0 ? (
-                <div className="space-y-3">
-                  {recentTrades.map((trade, index) => (
-                    <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-gray-800 dark:text-white">{trade.label}</h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{trade.time}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">Created at {trade.createdAt}</p>
+              ) : currentTrades.length > 0 ? (
+                <>
+                  <div className="space-y-3 mb-4">
+                    {currentTrades.map((trade) => (
+                      <div
+                        key={trade.id}
+                        className="border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0 last:pb-0"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3
+                              className="font-medium text-gray-800 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                              onClick={() => router.push(`/journals/${trade.id}`)}
+                            >
+                              {trade.label}
+                            </h3>
+                            {trade.symbol && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {trade.symbol}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{trade.time}</p>
+                          </div>
+                          <p
+                            className={`font-medium ${trade.profit >= 0
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-red-600 dark:text-red-400"
+                              }`}
+                          >
+                            {trade.profit >= 0
+                              ? `+$${trade.profit.toFixed(2)}`
+                              : `-$${Math.abs(trade.profit).toFixed(2)}`}
+                          </p>
                         </div>
-                        <p className={`font-medium ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {trade.profit >= 0 ? `+$${trade.profit.toFixed(2)}` : `-$${Math.abs(trade.profit).toFixed(2)}`}
-                        </p>
+                        {trade.notes && searchTerm && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                            {trade.notes}
+                          </p>
+                        )}
                       </div>
+                    ))}
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-between items-center mt-4">
+                      <button
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 text-sm rounded-md ${currentPage === 1
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                          }`}
+                      >
+                        Previous
+                      </button>
+                      
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      
+                      <button
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-1 text-sm rounded-md ${currentPage === totalPages
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                          }`}
+                      >
+                        Next
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p>No recent trades found</p>
-                  <p className="text-sm mt-2">Start trading to see your activity here</p>
+                  {searchTerm ? (
+                    <>
+                      <p>No trades match your search</p>
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p>No recent trades found</p>
+                      <p className="text-sm mt-2">Start trading to see your activity here</p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
