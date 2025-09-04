@@ -2,12 +2,21 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import { db, storage, auth } from "../lib/firebase";
-import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { v4 as uuidv4 } from 'uuid';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import {FaChartLine, FaPen, FaBook } from 'react-icons/fa';
-import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from "uuid";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { FaChartLine, FaPen, FaBook } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 export default function Journals() {
   const [user, loadingAuth] = useAuthState(auth);
@@ -31,35 +40,37 @@ export default function Journals() {
     screenshot: "",
     comments: [],
     createdAt: new Date().toISOString(),
-    userId: user?.uid || ""
+    userId: user?.uid || "",
   });
 
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        userId: user.uid
+        userId: user.uid,
       }));
       fetchJournals();
     }
   }, [user]);
 
   const analyzeWithAI = async (journalId) => {
-    {/* open the journal entry in /analyze/${journalId} */}
+    {
+      /* open the journal entry in /analyze/${journalId} */
+    }
     router.push(`/journals/analyze/${journalId}`);
   };
   const fetchJournals = async () => {
     if (!user) return;
-    
+
     try {
       const q = query(
         collection(db, "journals"),
         where("userId", "==", user.uid)
       );
       const querySnapshot = await getDocs(q);
-      const journalData = querySnapshot.docs.map(doc => ({
+      const journalData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       // Sort by date (newest first)
       journalData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -71,9 +82,9 @@ export default function Journals() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -88,7 +99,7 @@ export default function Journals() {
 
   const uploadImage = async () => {
     if (!imageFile) return null;
-    
+
     const storageRef = ref(storage, `journal-screenshots/${uuidv4()}`);
     await uploadBytes(storageRef, imageFile);
     return await getDownloadURL(storageRef);
@@ -97,7 +108,7 @@ export default function Journals() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
-    
+
     setIsLoading(true);
 
     try {
@@ -109,26 +120,33 @@ export default function Journals() {
       const journalData = {
         ...formData,
         screenshot: imageUrl,
-        createdAt: editingJournalId ? formData.createdAt : new Date().toISOString(),
+        createdAt: editingJournalId
+          ? formData.createdAt
+          : new Date().toISOString(),
         userId: user.uid,
-        comments: formData.comments || []
+        comments: formData.comments || [],
       };
 
       if (editingJournalId) {
         // Update existing journal
         await updateDoc(doc(db, "journals", editingJournalId), journalData);
-        setJournals(prev => prev.map(journal => 
-          journal.id === editingJournalId 
-            ? { id: editingJournalId, ...journalData }
-            : journal
-        ));
+        setJournals((prev) =>
+          prev.map((journal) =>
+            journal.id === editingJournalId
+              ? { id: editingJournalId, ...journalData }
+              : journal
+          )
+        );
       } else {
         // Create new journal
         const docRef = await addDoc(collection(db, "journals"), journalData);
-        setJournals(prev => [{
-          id: docRef.id,
-          ...journalData
-        }, ...prev]);
+        setJournals((prev) => [
+          {
+            id: docRef.id,
+            ...journalData,
+          },
+          ...prev,
+        ]);
       }
 
       resetForm();
@@ -151,7 +169,7 @@ export default function Journals() {
       screenshot: journal.screenshot,
       comments: journal.comments || [],
       createdAt: journal.createdAt,
-      userId: journal.userId
+      userId: journal.userId,
     });
     setEditingJournalId(journal.id);
     setImagePreview(journal.screenshot);
@@ -162,7 +180,7 @@ export default function Journals() {
     if (window.confirm("Are you sure you want to delete this journal entry?")) {
       try {
         await deleteDoc(doc(db, "journals", id));
-        setJournals(prev => prev.filter(journal => journal.id !== id));
+        setJournals((prev) => prev.filter((journal) => journal.id !== id));
       } catch (error) {
         console.error("Error deleting document: ", error);
       }
@@ -173,22 +191,25 @@ export default function Journals() {
     if (!newComment.trim()) return;
 
     try {
-      const journal = journals.find(j => j.id === journalId);
-      const updatedComments = [...(journal.comments || []), {
-        id: uuidv4(),
-        text: newComment,
-        createdAt: new Date().toISOString()
-      }];
+      const journal = journals.find((j) => j.id === journalId);
+      const updatedComments = [
+        ...(journal.comments || []),
+        {
+          id: uuidv4(),
+          text: newComment,
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
       await updateDoc(doc(db, "journals", journalId), {
-        comments: updatedComments
+        comments: updatedComments,
       });
 
-      setJournals(prev => prev.map(j => 
-        j.id === journalId 
-          ? { ...j, comments: updatedComments }
-          : j
-      ));
+      setJournals((prev) =>
+        prev.map((j) =>
+          j.id === journalId ? { ...j, comments: updatedComments } : j
+        )
+      );
 
       setNewComment("");
     } catch (error) {
@@ -198,18 +219,20 @@ export default function Journals() {
 
   const handleDeleteComment = async (journalId, commentId) => {
     try {
-      const journal = journals.find(j => j.id === journalId);
-      const updatedComments = journal.comments.filter(c => c.id !== commentId);
+      const journal = journals.find((j) => j.id === journalId);
+      const updatedComments = journal.comments.filter(
+        (c) => c.id !== commentId
+      );
 
       await updateDoc(doc(db, "journals", journalId), {
-        comments: updatedComments
+        comments: updatedComments,
       });
 
-      setJournals(prev => prev.map(j => 
-        j.id === journalId 
-          ? { ...j, comments: updatedComments }
-          : j
-      ));
+      setJournals((prev) =>
+        prev.map((j) =>
+          j.id === journalId ? { ...j, comments: updatedComments } : j
+        )
+      );
     } catch (error) {
       console.error("Error deleting comment: ", error);
     }
@@ -225,7 +248,7 @@ export default function Journals() {
       screenshot: "",
       comments: [],
       createdAt: new Date().toISOString(),
-      userId: user?.uid || ""
+      userId: user?.uid || "",
     });
     setImageFile(null);
     setImagePreview(null);
@@ -267,8 +290,12 @@ export default function Journals() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center">
-            <span><FaBook className="mr-2" /></span>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Journals</h2>
+            <span>
+              <FaBook className="mr-2" />
+            </span>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+              Journals
+            </h2>
           </div>
           <button
             onClick={() => {
@@ -278,7 +305,10 @@ export default function Journals() {
             }}
             className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
           >
-            <span><FaPen className="mr-2" /></span>New Journal
+            <span>
+              <FaPen className="mr-2" />
+            </span>
+            New Journal
           </button>
         </div>
 
@@ -289,7 +319,9 @@ export default function Journals() {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {editingJournalId ? 'Edit Journal Entry' : 'New Journal Entry'}
+                    {editingJournalId
+                      ? "Edit Journal Entry"
+                      : "New Journal Entry"}
                   </h2>
                   <button
                     onClick={() => {
@@ -388,7 +420,11 @@ export default function Journals() {
                       />
                       {imagePreview && (
                         <div className="mt-2">
-                          <img src={imagePreview} alt="Preview" className="h-32 rounded-md object-cover" />
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="h-32 rounded-md object-cover"
+                          />
                         </div>
                       )}
                     </div>
@@ -411,7 +447,11 @@ export default function Journals() {
                       disabled={isLoading}
                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                     >
-                      {isLoading ? "Saving..." : editingJournalId ? "Update Entry" : "Save Entry"}
+                      {isLoading
+                        ? "Saving..."
+                        : editingJournalId
+                        ? "Update Entry"
+                        : "Save Entry"}
                     </button>
                   </div>
                 </form>
@@ -424,7 +464,9 @@ export default function Journals() {
         <div className="space-y-3">
           {journals.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No journal entries yet. Create your first one!</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                No journal entries yet. Create your first one!
+              </p>
             </div>
           ) : (
             journals.map((journal) => (
@@ -432,7 +474,7 @@ export default function Journals() {
                 key={journal.id}
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-200"
               >
-                <div 
+                <div
                   className="p-4 cursor-pointer flex justify-between items-center"
                   onClick={() => toggleJournalExpand(journal.id)}
                 >
@@ -441,27 +483,54 @@ export default function Journals() {
                       {journal.entrySetup}
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(journal.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                      {new Date(journal.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`text-sm font-medium ${journal.profitloss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {journal.profitloss >= 0 ? '+' : ''}${journal.profitloss}
+                    <span
+                      className={`text-sm font-medium ${
+                        journal.profitloss >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {journal.profitloss >= 0 ? "+" : ""}${journal.profitloss}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {((journal.profitloss / 10) * 100).toFixed(2)} %
                     </span>
                     <div className="text-gray-500 dark:text-gray-400">
                       {expandedJournalId === journal.id ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>
@@ -471,7 +540,9 @@ export default function Journals() {
                 {expandedJournalId === journal.id && (
                   <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="pt-4">
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Journal Content</h3>
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Journal Content
+                      </h3>
                       <span>
                         <FaChartLine size={28} />
                       </span>
@@ -481,16 +552,32 @@ export default function Journals() {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood Before</span>
-                          <p className="text-gray-800 dark:text-gray-200">{journal.moodBefore}</p>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Mood Before
+                          </span>
+                          <p className="text-gray-800 dark:text-gray-200">
+                            {journal.moodBefore}
+                          </p>
                         </div>
                         <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood After</span>
-                          <p className="text-gray-800 dark:text-gray-200">{journal.moodAfter}</p>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Mood After
+                          </span>
+                          <p className="text-gray-800 dark:text-gray-200">
+                            {journal.moodAfter}
+                          </p>
                         </div>
                         <div>
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit/Loss</span>
-                          <p className={journal.profitloss >= 0 ? "text-green-600" : "text-red-600"}>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Profit/Loss
+                          </span>
+                          <p
+                            className={
+                              journal.profitloss >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
                             ${journal.profitloss}
                           </p>
                         </div>
@@ -498,42 +585,58 @@ export default function Journals() {
 
                       {journal.screenshot ? (
                         <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Screenshot</span>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">
+                            Screenshot
+                          </span>
                           <img
                             src={journal.screenshot}
                             alt="Trade screenshot"
-                            className="max-w-full h-auto rounded-md border border-gray-200 dark:border-gray-700"
+                            className="w-32 h-32 object-cover rounded-md border border-gray-200 dark:border-gray-700"
                           />
                         </div>
-                      ):(
+                      ) : (
                         <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">No Screenshot Available</span>
+                          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">
+                            No Screenshot Available
+                          </span>
                         </div>
                       )}
 
                       {/* Comments Section */}
                       <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Comments</h4>
-                        
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                          Comments
+                        </h4>
+
                         {/* Existing Comments */}
                         {journal.comments && journal.comments.length > 0 && (
                           <div className="space-y-2 mb-3">
                             {journal.comments.map((comment) => (
-                              <div key={comment.id} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                                <p className="text-gray-700 dark:text-gray-300 text-sm">{comment.text}</p>
+                              <div
+                                key={comment.id}
+                                className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md"
+                              >
+                                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                                  {comment.text}
+                                </p>
                                 <div className="flex justify-between items-center mt-2">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {new Date(comment.createdAt).toLocaleDateString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
+                                    {new Date(
+                                      comment.createdAt
+                                    ).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
                                     })}
                                   </span>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteComment(journal.id, comment.id);
+                                      handleDeleteComment(
+                                        journal.id,
+                                        comment.id
+                                      );
                                     }}
                                     className="text-red-500 hover:text-red-700 text-xs"
                                   >
@@ -554,7 +657,7 @@ export default function Journals() {
                             placeholder="Add a comment..."
                             className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                             onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
+                              if (e.key === "Enter") {
                                 e.preventDefault();
                                 handleAddComment(journal.id);
                               }
@@ -574,7 +677,12 @@ export default function Journals() {
 
                       {/* Action Buttons */}
                       <div className="flex justify-end space-x-2">
-                        <button className="flex items-center gap-2 px-3 py-2 border rounded" onClick={() => {analyzeWithAI(journal.id)}}>
+                        <button
+                          className="flex items-center gap-2 px-3 py-2 border rounded"
+                          onClick={() => {
+                            analyzeWithAI(journal.id);
+                          }}
+                        >
                           <FaChartLine size={20} />
                           <span>Analyze with AI</span>
                         </button>
