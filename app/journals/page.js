@@ -60,6 +60,7 @@ export default function Journals() {
       setIsMessage(false);
     }
   }, []);
+  
 
   const handleCloseMessage = () => {
     setIsMessage(false);
@@ -333,7 +334,7 @@ export default function Journals() {
             You can now view Profit/Loss In the Status Bar 
           </p>
           <button 
-            onClick={() => setIsMessage(false)}
+            onClick={() => handleCloseMessage()}
             className="ml-auto text-white font-bold hover:text-gray-200"
             >
             X
