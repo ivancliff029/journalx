@@ -29,6 +29,7 @@ export default function Journals() {
   const [editingJournalId, setEditingJournalId] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [newComment, setNewComment] = useState("");
+  const [message, setIsMessage] = useState(true);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -52,6 +53,18 @@ export default function Journals() {
       fetchJournals();
     }
   }, [user]);
+
+  useEffect(() => {
+    const hasClosedMessage = localStorage.getItem("statusMessageClosed");
+    if (hasClosedMessage) {
+      setIsMessage(false);
+    }
+  }, []);
+
+  const handleCloseMessage = () => {
+    setIsMessage(false);
+    localStorage.setItem("statusMessageClosed", "true");
+  }
 
   const analyzeWithAI = async (journalId) => {
     {
@@ -297,21 +310,37 @@ export default function Journals() {
               Journals
             </h2>
           </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setEditingJournalId(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
-          >
-            <span>
-              <FaPen className="mr-2" />
-            </span>
-            New Journal
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                resetForm();
+                setEditingJournalId(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+            >
+              <span>
+                <FaPen className="mr-2" />
+              </span>
+              New Journal
+            </button>
+          </div>
+        </div>
+        {/*alert messages*/}
+        {message && (
+          <div className="m-2 flex bg-green-500 rounded p-2 max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
+          <p className="text-sm text-center sm:text-base md:text-lg">
+            You can now view Profit/Loss In the Status Bar 
+          </p>
+          <button 
+            onClick={() => setIsMessage(false)}
+            className="ml-auto text-white font-bold hover:text-gray-200"
+            >
+            X
           </button>
         </div>
-
+        )}
+        
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
