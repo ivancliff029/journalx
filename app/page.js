@@ -7,6 +7,10 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import {
   doc,
   getDoc,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
@@ -14,7 +18,10 @@ export default function Home() {
   const [user, loadingAuth, errorAuth] = useAuthState(auth);
   const [imgURL, setImgURL] = useState('');
   const [username, setUsername] = useState('');
+  const [posts, setPosts] = useState([]); 
+  const [loadingPosts, setLoadingPosts] = useState(true);
 
+  // Fetch user profile
   useEffect(() => {
     if (user) {
       const fetchUsername = async () => {
@@ -41,39 +48,47 @@ export default function Home() {
     }
   }, [user, db]);
 
-  const name = username || "Trader";
+  
+  useEffect(() => {
+  setLoadingPosts(true);
 
-  const posts = [
-    {
-      type: "quote",
-      content:
-        "The goal of a successful trader is to make the best trades. Money is a consequence.",
-      author: "Paul Tudor Jones",
-      imageUrl:
-        "https://via.placeholder.com/400x200/1e40af/ffffff?text=Forex+Mastery",
+  const parseTimestamp = (ts) => {
+    if (!ts) return new Date();
+    if (ts.toDate) return ts.toDate();
+    if (ts instanceof Date) return ts;
+    if (typeof ts === 'string') return new Date(ts);
+    return new Date();
+  };
+
+  const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const postsData = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          type: data.type || "user-post",
+          content: data.content || "",
+          username: data.username || "Anonymous", // ✅ Key must match Article.js
+          imageUrl: data.imageUrl || "",
+          timestamp: parseTimestamp(data.timestamp),
+        };
+      });
+      setPosts(postsData);
+      setLoadingPosts(false);
     },
-    {
-      type: "tip",
-      title: "Risk Management Tip",
-      content:
-        "Never risk more than 1-2% of your trading capital on a single trade. Protect your account first.",
-      author: "Pro Trader Rule",
-    },
-    {
-      type: "motivation",
-      content:
-        "Losses are tuition. Every losing trade teaches you something. Stay disciplined.",
-      author: "Anonymous",
-      imageUrl:
-        "https://via.placeholder.com/400x200/7c3aed/ffffff?text=Stay+Strong",
-    },
-    {
-      type: "info",
-      title: "Did You Know?",
-      content:
-        "Over 90% of retail traders lose money. The top 10% win by having a journal, plan, and discipline.",
-    },
-  ];
+    (error) => {
+      console.error("Error fetching posts:", error);
+      setLoadingPosts(false);
+    }
+  );
+
+  return () => unsubscribe();
+}, [db]);
+
+  const name = username || "Trader";
 
   return (
     <>
@@ -85,22 +100,37 @@ export default function Home() {
               Welcome back, {name}!
             </h2>
             <Post userImgURL={imgURL} />
-            <div className="">
-              {posts.map((post, index) => (
-                <Article key={index} article={post} />
-              ))}
+            <div className="space-y-6 mt-8">
+              {loadingPosts ? (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">Loading posts...</p>
+                </div>
+              ) : posts.length > 0 ? (
+                posts.map((post) => (
+                  <Article key={post.id} article={post} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No posts yet. Be the first to share!</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       ) : (
-        <div 
-        style={{ backgroundImage: `url('/img/welcome.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', }}
-        className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-          <div className="max-w-3xl w-full text-center">
-            <h1 className="text-4xl font-extrabold text-white-900 mb-4">
+        <div
+          style={{
+            backgroundImage: `url('/img/welcome.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          className="min-h-screen flex flex-col justify-center items-center bg-black bg-opacity-50 py-8 px-4"
+        >
+          <div className="max-w-3xl w-full text-center backdrop-blur-sm bg-white/10 p-8 rounded-xl">
+            <h1 className="text-4xl font-extrabold text-white mb-4">
               Forex Trading Inspiration
             </h1>
-            <p className="text-lg text-white-600 mb-8">
+            <p className="text-lg text-white/90 mb-8">
               Unlock your trading potential with daily quotes, tips, and motivation from top traders.
             </p>
             <div className="flex justify-center space-x-4">
