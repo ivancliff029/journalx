@@ -1,8 +1,48 @@
+"use client";
 import Navbar from "./components/Navbar";
 import Article from "./components/Article";
 import Post from "./components/Post";
+import { db,auth } from "./lib/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [user, loadingAuth, errorAuth] = useAuthState(auth);
+  const [imgURL, setImgURL] = useState('');
+  const [username, setUsername] = useState('');
+   useEffect(() => {
+    if (user) {
+      const fetchUsername = async () => {
+        try {
+          const userDocRef = doc(db, "users", user.uid); // Reference to user's Firestore doc
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            setUsername(userData.username || "Trader");
+            setImgURL(userData.avatar || ""); // Fallback if imgURL is missing
+          } else {
+            setUsername("Trader"); // No user doc found
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setUsername("Trader");
+        } 
+      };
+
+      fetchUsername();
+    } else {
+      // No authenticated user
+      setUsername("Trader");
+    }
+  }, [user, db]);
+
+   const name = username || "Trader";
+
   const posts = [
     {
       type: "quote",
@@ -42,7 +82,10 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
             Stay Inspired. Stay Disciplined.
           </h1>
-          <Post />
+          <h2 className="text-xl font-semibold text-gray-700 mb-6">
+            Welcome back, {name}!
+          </h2>
+          <Post userImgURL={imgURL} />
           <div className="">
             {posts.map((post, index) => (
               <Article key={index} article={post} />
