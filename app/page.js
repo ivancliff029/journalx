@@ -93,12 +93,14 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+        <div 
+        style={{ backgroundImage: `url('/img/welcome.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', }}
+        className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
           <div className="max-w-3xl w-full text-center">
-            <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
+            <h1 className="text-4xl font-extrabold text-white-900 mb-4">
               Forex Trading Inspiration
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-white-600 mb-8">
               Unlock your trading potential with daily quotes, tips, and motivation from top traders.
             </p>
             <div className="flex justify-center space-x-4">
