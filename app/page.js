@@ -2,7 +2,7 @@
 import Navbar from "./components/Navbar";
 import Article from "./components/Article";
 import Post from "./components/Post";
-import { db,auth } from "./lib/firebase";
+import { db, auth } from "./lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import {
   doc,
@@ -14,34 +14,34 @@ export default function Home() {
   const [user, loadingAuth, errorAuth] = useAuthState(auth);
   const [imgURL, setImgURL] = useState('');
   const [username, setUsername] = useState('');
-   useEffect(() => {
+
+  useEffect(() => {
     if (user) {
       const fetchUsername = async () => {
         try {
-          const userDocRef = doc(db, "users", user.uid); // Reference to user's Firestore doc
+          const userDocRef = doc(db, "users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             setUsername(userData.username || "Trader");
-            setImgURL(userData.avatar || ""); // Fallback if imgURL is missing
+            setImgURL(userData.avatar || "");
           } else {
-            setUsername("Trader"); // No user doc found
+            setUsername("Trader");
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
           setUsername("Trader");
-        } 
+        }
       };
 
       fetchUsername();
     } else {
-      // No authenticated user
       setUsername("Trader");
     }
   }, [user, db]);
 
-   const name = username || "Trader";
+  const name = username || "Trader";
 
   const posts = [
     {
@@ -74,22 +74,50 @@ export default function Home() {
         "Over 90% of retail traders lose money. The top 10% win by having a journal, plan, and discipline.",
     },
   ];
+
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-xl font-semibold text-gray-700 mb-6">
-            Welcome back, {name}!
-          </h2>
-          <Post userImgURL={imgURL} />
-          <div className="">
-            {posts.map((post, index) => (
-              <Article key={index} article={post} />
-            ))}
+      {user ? (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-xl font-semibold text-gray-700 mb-6">
+              Welcome back, {name}!
+            </h2>
+            <Post userImgURL={imgURL} />
+            <div className="">
+              {posts.map((post, index) => (
+                <Article key={index} article={post} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+          <div className="max-w-3xl w-full text-center">
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
+              Forex Trading Inspiration
+            </h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Unlock your trading potential with daily quotes, tips, and motivation from top traders.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <a
+                href="/signup"
+                className="px-6 py-3 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition"
+              >
+                Get Started
+              </a>
+              <a
+                href="/login"
+                className="px-6 py-3 bg-gray-200 text-gray-800 rounded-md shadow hover:bg-gray-300 transition"
+              >
+                Log In
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
