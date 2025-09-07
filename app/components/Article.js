@@ -64,7 +64,7 @@ const Article = ({ article }) => {
 
   return (
     <article
-      className={`max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100`}
+      className={`w-full m-2 mx-auto bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100`}
     >
       {/* Optional Image */}
       {imageUrl && (

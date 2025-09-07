@@ -1,5 +1,6 @@
 import Navbar from "./components/Navbar";
 import Article from "./components/Article";
+import Post from "./components/Post";
 
 export default function Home() {
   const posts = [
@@ -41,7 +42,8 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
             Stay Inspired. Stay Disciplined.
           </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Post />
+          <div className="">
             {posts.map((post, index) => (
               <Article key={index} article={post} />
             ))}
