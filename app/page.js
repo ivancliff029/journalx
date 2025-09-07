@@ -71,7 +71,7 @@ export default function Home() {
           id: doc.id,
           type: data.type || "user-post",
           content: data.content || "",
-          username: data.username || "Anonymous", // ✅ Key must match Article.js
+          username: data.username || "Anonymous", 
           imageUrl: data.imageUrl || "",
           timestamp: parseTimestamp(data.timestamp),
         };

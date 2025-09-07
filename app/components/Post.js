@@ -1,12 +1,31 @@
 "use client";
 import { auth, db } from "../lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { addDoc, collection } from "firebase/firestore";
-import { useState } from "react";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { serverTimestamp } from "firebase/firestore";
 
 export default function Post({ userImgURL }) {
   const [user, loadingAuth, errorAuth] = useAuthState(auth);
   const [content, setContent] = useState('');
+  const [username, setUsername] = useState('Trader');
+ 
+
+  useEffect(() => {
+    if (user) {
+      const docRef = doc(db, "users", user.uid);
+      getDoc(docRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUsername(userData.username || "Trader");
+          setUserImgURL(userData.avatar || "");
+        } else {
+          setUsername("Trader");
+        }
+      });
+    }
+  }, [user, db]);
+
 
   const storeData = async (e) => {
     e.preventDefault();
@@ -23,9 +42,12 @@ export default function Post({ userImgURL }) {
 
     try {
     
-      await addDoc(collection(db, "users", user.uid, "posts"), {
+      await addDoc(collection(db, "posts"), {
         content: content.trim(),
-        timestamp: new Date(),
+        username: username || "Trader",
+        userId: user.uid,
+        userImgURL: userImgURL || "",
+        timestamp: serverTimestamp(),
       });
       setContent('');
       alert("Post shared successfully!");
