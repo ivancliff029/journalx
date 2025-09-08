@@ -524,7 +524,7 @@ export default function Journals() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`text-sm font-medium ${
+                      className={`text-sm font-small ${
                         journal.profitloss >= 0
                           ? "text-green-600"
                           : "text-red-600"
@@ -532,7 +532,7 @@ export default function Journals() {
                     >
                       {journal.profitloss >= 0 ? "+" : ""}${journal.profitloss}
                     </span>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-small text-gray-500 dark:text-gray-400">
                       {((journal.profitloss / 10) * 100).toFixed(2)} %
                     </span>
                     <div className="text-gray-500 dark:text-gray-400">
