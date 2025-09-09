@@ -1,24 +1,109 @@
 "use client";
-
-import React, { useState } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth, db } from '../lib/firebase';
+import { 
+  addDoc, 
+  doc, 
+  collection, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  onSnapshot 
+} from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { serverTimestamp } from 'firebase/firestore';
 
 const Article = ({ article }) => {
   const {
-    content,           // Always exists
-    username = 'Anonymous', // ✅ Renamed from "author" → matches Post.js
-    timestamp,         // Exists if saved
-    type = 'user-post', // Default if not set
-    imageUrl = '',     // Optional
+    content,
+    username = 'Anonymous',
+    timestamp,
+    type = 'user-post',
+    imageUrl = '',
   } = article;
 
+  const [user] = useAuthState(auth);
+  const userId = user ? user.uid : null;
   const [likes, setLikes] = useState(0);
+  const [userHasLiked, setUserHasLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLike = () => setLikes((prev) => prev + 1);
+  // Fetch likes count and check if current user has liked
+  useEffect(() => {
+    if (!article.id) return;
+
+    const likesCollectionRef = collection(db, 'posts', article.id, 'likes');
+    
+    // Set up real-time listener for likes
+    const unsubscribe = onSnapshot(likesCollectionRef, (snapshot) => {
+      const likesCount = snapshot.size;
+      setLikes(likesCount);
+      
+      // Check if current user has liked this post
+      if (userId) {
+        const userLike = snapshot.docs.find(doc => doc.data().userId === userId);
+        setUserHasLiked(!!userLike);
+      }
+    }, (error) => {
+      console.error('Error fetching likes:', error);
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [article.id, userId]);
+
+  const handleLike = async () => {
+    if (!userId || !article.id || loading) {
+      if (!userId) {
+        alert('Please sign in to like posts!');
+      }
+      return;
+    }
+
+    // Prevent duplicate likes
+    if (userHasLiked) {
+      alert('You already liked this post!');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Double-check to prevent race conditions - query for existing like
+      const likesRef = collection(db, 'posts', article.id, 'likes');
+      const userLikeQuery = query(likesRef, where('userId', '==', userId));
+      const existingLikes = await getDocs(userLikeQuery);
+      
+      if (!existingLikes.empty) {
+        alert('You already liked this post!');
+        setUserHasLiked(true); // Update state to match reality
+        return;
+      }
+
+      // Add like to subcollection
+      await addDoc(collection(db, 'posts', article.id, 'likes'), {
+        userId,
+        timestamp: serverTimestamp(),
+      });
+      
+      // Note: The real-time listener will update the UI automatically
+      alert('You liked this post!');
+    } catch (error) {
+      console.error('Error adding like:', error);
+      alert('Failed to like post. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBookmark = () => setBookmarked((prev) => !prev);
 
   const handleShare = () => {
-    const shareText = `${content} — ${username}${timestamp ? ` · ${new Date(timestamp).toLocaleDateString()}` : ''}`;
+    const shareText = `${content} — ${username}${
+      timestamp ? ` · ${new Date(timestamp).toLocaleDateString()}` : ''
+    }`;
     if (navigator.share) {
       navigator.share({
         title: 'Forex Post',
@@ -101,12 +186,12 @@ const Article = ({ article }) => {
         {/* Type Badge */}
         <div className="mb-3">{getTypeBadge()}</div>
 
-        {/* Content (no title support — Post.js doesn't save it) */}
+        {/* Content */}
         <blockquote className="text-gray-700 leading-relaxed mb-4 text-base">
           {content}
         </blockquote>
 
-        {/* Author (username) + Timestamp */}
+        {/* Author + Timestamp */}
         <footer className="text-sm text-gray-500 font-medium flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 border-t border-gray-100 mt-3">
           <span>— {username}</span>
           {timestamp && (
@@ -119,22 +204,25 @@ const Article = ({ article }) => {
       <div className="flex justify-between items-center px-5 py-3 bg-gray-50 border-t border-gray-100">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full transition-colors ${
-            likes > 0
+          disabled={loading}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 ${
+            userHasLiked
               ? 'bg-red-100 text-red-600'
+              : likes > 0
+              ? 'bg-red-50 text-red-500 hover:bg-red-100'
               : 'text-gray-600 hover:bg-gray-200'
           }`}
           aria-label={`${likes} likes`}
         >
-          <span aria-hidden="true">❤️</span>
-          <span>{likes}</span>
+          <span aria-hidden="true">{userHasLiked ? '❤️' : '🤍'}</span>
+          <span>{loading ? '...' : likes}</span>
         </button>
 
         <div className="flex gap-3">
           <button
             onClick={handleBookmark}
             className="text-gray-600 hover:text-yellow-600 transition-colors"
-            aria-label={bookmarked ? "Remove bookmark" : "Bookmark this post"}
+            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this post'}
           >
             <span className="text-xl" aria-hidden="true">
               {bookmarked ? '⭐' : '✩'}

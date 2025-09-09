@@ -97,7 +97,7 @@ export default function Home() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-xl font-semibold text-gray-700 mb-6">
-              Welcome back, {name}!
+              Welcome back, <span className="text-blue-400">{name.charAt(0).toUpperCase() + name.slice(1)}</span>
             </h2>
             <Post userImgURL={imgURL} />
             <div className="space-y-6 mt-8">
