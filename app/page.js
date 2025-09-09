@@ -107,7 +107,7 @@ export default function Home() {
                 </div>
               ) : posts.length > 0 ? (
                 posts.map((post) => (
-                  <Article key={post.id} article={post} />
+                  <Article key={post.id} article={post} imgURL={imgURL} />
                 ))
               ) : (
                 <div className="text-center py-10">

@@ -1,20 +1,20 @@
 "use client";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '../lib/firebase';
-import { 
-  addDoc, 
-  doc, 
-  collection, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where, 
-  onSnapshot 
+import {
+  addDoc,
+  doc,
+  collection,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { serverTimestamp } from 'firebase/firestore';
 
-const Article = ({ article }) => {
+const Article = ({ article, imgURL }) => {
   const {
     content,
     username = 'Anonymous',
@@ -35,12 +35,12 @@ const Article = ({ article }) => {
     if (!article.id) return;
 
     const likesCollectionRef = collection(db, 'posts', article.id, 'likes');
-    
+
     // Set up real-time listener for likes
     const unsubscribe = onSnapshot(likesCollectionRef, (snapshot) => {
       const likesCount = snapshot.size;
       setLikes(likesCount);
-      
+
       // Check if current user has liked this post
       if (userId) {
         const userLike = snapshot.docs.find(doc => doc.data().userId === userId);
@@ -69,13 +69,13 @@ const Article = ({ article }) => {
     }
 
     setLoading(true);
-    
+
     try {
       // Double-check to prevent race conditions - query for existing like
       const likesRef = collection(db, 'posts', article.id, 'likes');
       const userLikeQuery = query(likesRef, where('userId', '==', userId));
       const existingLikes = await getDocs(userLikeQuery);
-      
+
       if (!existingLikes.empty) {
         alert('You already liked this post!');
         setUserHasLiked(true); // Update state to match reality
@@ -87,7 +87,7 @@ const Article = ({ article }) => {
         userId,
         timestamp: serverTimestamp(),
       });
-      
+
       // Note: The real-time listener will update the UI automatically
       alert('You liked this post!');
     } catch (error) {
@@ -101,9 +101,8 @@ const Article = ({ article }) => {
   const handleBookmark = () => setBookmarked((prev) => !prev);
 
   const handleShare = () => {
-    const shareText = `${content} — ${username}${
-      timestamp ? ` · ${new Date(timestamp).toLocaleDateString()}` : ''
-    }`;
+    const shareText = `${content} — ${username}${timestamp ? ` · ${new Date(timestamp).toLocaleDateString()}` : ''
+      }`;
     if (navigator.share) {
       navigator.share({
         title: 'Forex Post',
@@ -169,22 +168,18 @@ const Article = ({ article }) => {
   return (
     <article className="w-full m-2 mx-auto bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100">
       {/* Optional Image */}
-      {imageUrl && (
-        <div className="h-40 sm:h-48 overflow-hidden relative">
-          <img
-            src={imageUrl}
-            alt="Post visual"
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-        </div>
-      )}
 
       {/* Content */}
-      <div className={`p-5 ${!imageUrl ? 'bg-gradient-to-r from-amber-50 to-yellow-50' : ''}`}>
+      <div className={`p-5 flex gap-3 ${!imageUrl ? 'bg-gradient-to-r from-amber-50 to-yellow-50' : ''}`}>
+        <img
+          src={
+            imgURL ||
+            "https://via.placeholder.com/150?text=User" // Fallback if no image
+          }
+          alt="Your avatar"
+          className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 flex-shrink-0"
+        />
         {/* Type Badge */}
-        <div className="mb-3">{getTypeBadge()}</div>
 
         {/* Content */}
         <blockquote className="text-gray-700 leading-relaxed mb-4 text-base">
@@ -192,6 +187,7 @@ const Article = ({ article }) => {
         </blockquote>
 
         {/* Author + Timestamp */}
+      <div className="flex flex-col items-start flex-1">
         <footer className="text-sm text-gray-500 font-medium flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 border-t border-gray-100 mt-3">
           <span>— {username}</span>
           {timestamp && (
@@ -199,19 +195,19 @@ const Article = ({ article }) => {
           )}
         </footer>
       </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center px-5 py-3 bg-gray-50 border-t border-gray-100">
         <button
           onClick={handleLike}
           disabled={loading}
-          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 ${
-            userHasLiked
-              ? 'bg-red-100 text-red-600'
-              : likes > 0
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 ${userHasLiked
+            ? 'bg-red-100 text-red-600'
+            : likes > 0
               ? 'bg-red-50 text-red-500 hover:bg-red-100'
               : 'text-gray-600 hover:bg-gray-200'
-          }`}
+            }`}
           aria-label={`${likes} likes`}
         >
           <span aria-hidden="true">{userHasLiked ? '❤️' : '🤍'}</span>
