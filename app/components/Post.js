@@ -9,6 +9,7 @@ export default function Post({ userImgURL }) {
   const [user, loadingAuth, errorAuth] = useAuthState(auth);
   const [content, setContent] = useState('');
   const [username, setUsername] = useState('Trader');
+  const [userImgUrl, setUserImgURL] = useState(userImgURL || '');
  
 
   useEffect(() => {
