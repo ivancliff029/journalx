@@ -85,7 +85,7 @@ export default function Post({ userImgURL }) {
               <img
                 src={
                   userImgURL ||
-                  "https://via.placeholder.com/150?text=User" // Fallback if no image
+                  "https://img.icons8.com/?size=100&id=32439&format=png&color=000000" // Fallback if no image
                 }
                 alt="Your avatar"
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 flex-shrink-0"
