@@ -166,7 +166,7 @@ export default function Dashboard() {
     { label: "Profitable Trades", value: stats.profitableTrades, color: "bg-green-100 dark:bg-green-900/30", textColor: "text-green-600 dark:text-green-400" },
     { label: "Losing Trades", value: stats.losingTrades, color: "bg-red-100 dark:bg-red-900/30", textColor: "text-red-600 dark:text-red-400" },
     { label: "Net Profit/Loss", value: `$${stats.netProfit.toFixed(2)}`, color: "bg-blue-100 dark:bg-blue-900/30", textColor: stats.netProfit >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400" },
-    { label: "Initial Balance", value: `$${stats.initialBalance.toFixed(2)}`, color: "bg-purple-100 dark:bg-purple-900/30", textColor: "text-purple-600 dark:text-purple-400" },
+    { label: "Starting Balance", value: `$${stats.initialBalance.toFixed(2)}`, color: "bg-purple-100 dark:bg-purple-900/30", textColor: "text-purple-600 dark:text-purple-400" },
     { label: "Current Balance", value: `$${stats.currentBalance.toFixed(2)}`, color: "bg-yellow-100 dark:bg-yellow-900/30", textColor: stats.currentBalance >= stats.initialBalance ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400" }
   ];
 
