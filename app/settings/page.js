@@ -211,11 +211,12 @@ export default function SettingsPage() {
     return (
       <>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <p className="text-gray-600">Please log in to access settings</p>
-          </div>
+       <div className='container mx-auto px-4 py-8 text-center'>
+        <div className="animation-spin inline-block mb-4">
+          <FiRefreshCw className="text-4xl text-gray-400" />
         </div>
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+       </div>
       </>
     );
   }
