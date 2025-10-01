@@ -39,11 +39,11 @@ export default function Dashboard() {
         // Fetch initial balance from user settings
         const settingsRef = doc(db, "userSettings", userId);
         const settingsSnap = await getDoc(settingsRef);
-        let initialBalance = 100; // Default fallback
+        let initialBalance = 0; // Default fallback
 
         if (settingsSnap.exists()) {
           const settingsData = settingsSnap.data();
-          initialBalance = settingsData.accountBalance || 100;
+          initialBalance = settingsData.accountBalance || 0;
         }
 
         // Fetch all trades
