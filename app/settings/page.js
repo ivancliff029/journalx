@@ -17,7 +17,6 @@ export default function SettingsPage() {
   });
   const [amount, setAmount] = useState('');
   const [showBlownConfirm, setShowBlownConfirm] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState('settings');
   const [loading, setLoading] = useState(false);
 
@@ -30,13 +29,12 @@ export default function SettingsPage() {
       
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Ensure all fields exist with proper fallbacks
         setSettings({
           mousePsychologyAlerts: data.mousePsychologyAlerts ?? true,
           darkMode: data.darkMode ?? false,
           accountBalance: data.accountBalance ?? 0,
           blownAccounts: data.blownAccounts || [],
-          depositHistory: data.depositHistory || [] // Fallback to empty array if missing
+          depositHistory: data.depositHistory || []
         });
       } else {
         await setDoc(docRef, settings);
@@ -63,6 +61,18 @@ export default function SettingsPage() {
           accountBalance: newBalance,
           depositHistory: arrayUnion(depositRecord)
         });
+      } else if (transactionType === 'withdrawal') {
+        depositRecord = {
+          date: new Date().toISOString(),
+          amount: amount,
+          type: 'withdrawal',
+          balanceAfter: newBalance
+        };
+        
+        await updateDoc(doc(db, "userSettings", user.uid), { 
+          accountBalance: newBalance,
+          depositHistory: arrayUnion(depositRecord)
+        });
       } else {
         await updateDoc(doc(db, "userSettings", user.uid), { 
           accountBalance: newBalance 
@@ -72,7 +82,7 @@ export default function SettingsPage() {
       setSettings(prev => ({
         ...prev,
         accountBalance: newBalance,
-        depositHistory: transactionType === 'deposit' 
+        depositHistory: transactionType === 'deposit' || transactionType === 'withdrawal'
           ? [...(prev.depositHistory || []), depositRecord]
           : prev.depositHistory
       }));
@@ -111,11 +121,11 @@ export default function SettingsPage() {
 
   const handleSetBalance = async () => {
     const value = parseFloat(amount);
-    if (isNaN(value) || value <= 0) {
-      alert('Please enter a valid positive amount');
+    if (isNaN(value) || value < 0) {
+      alert('Please enter a valid amount (0 or greater)');
       return;
     }
-    const confirm = window.confirm(`Set your starting balance to $${value.toFixed(2)}?`);
+    const confirm = window.confirm(`Set your balance to $${value.toFixed(2)}?`);
     if (confirm) {
       await updateBalance(value, 'set', value);
     }
@@ -130,19 +140,30 @@ export default function SettingsPage() {
         markedManually: true
       };
 
+      // Create a transaction record for the blown account
+      const blownTransactionRecord = {
+        date: new Date().toISOString(),
+        amount: settings.accountBalance,
+        type: 'blown',
+        balanceAfter: 0,
+        previousBalance: settings.accountBalance
+      };
+
       await updateDoc(doc(db, "userSettings", user.uid), {
         accountBalance: 0,
-        blownAccounts: arrayUnion(blownRecord)
+        blownAccounts: arrayUnion(blownRecord),
+        depositHistory: arrayUnion(blownTransactionRecord)
       });
 
       setSettings(prev => ({
         ...prev,
         accountBalance: 0,
-        blownAccounts: [...(prev.blownAccounts || []), blownRecord]
+        blownAccounts: [...(prev.blownAccounts || []), blownRecord],
+        depositHistory: [...(prev.depositHistory || []), blownTransactionRecord]
       }));
       
       setShowBlownConfirm(false);
-      alert('Account marked as blown. Balance set to $0.');
+      alert('Account marked as blown. Balance set to $0. Your dashboard will now show fresh data.');
     } catch (error) {
       console.error("Error:", error);
       alert('Failed to mark account as blown. Please try again.');
@@ -212,7 +233,7 @@ export default function SettingsPage() {
       <>
         <Navbar />
        <div className='container mx-auto px-4 py-8 text-center'>
-        <div className="animation-spin inline-block mb-4">
+        <div className="animate-spin inline-block mb-4">
           <FiRefreshCw className="text-4xl text-gray-400" />
         </div>
         <p className="text-gray-600 dark:text-gray-400">Loading...</p>
@@ -246,7 +267,7 @@ export default function SettingsPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              <FiBarChart2 className="mr-2" /> Deposit History
+              <FiBarChart2 className="mr-2" /> Transaction History
             </button>
             <button
               onClick={() => setActiveTab('blown')}
@@ -256,7 +277,13 @@ export default function SettingsPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              <FiTrendingDown className="mr-2" /> Blown Accounts
+              <FiTrendingDown className="mr-2" /> 
+              Blown Accounts
+              {settings.blownAccounts && settings.blownAccounts.length > 0 && (
+                <span className="ml-2 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 text-xs px-2 py-0.5 rounded-full">
+                  {settings.blownAccounts.length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -325,6 +352,11 @@ export default function SettingsPage() {
                   <p className={`text-4xl font-bold ${settings.accountBalance === 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
                     ${settings.accountBalance.toFixed(2)}
                   </p>
+                  {settings.blownAccounts && settings.blownAccounts.length > 0 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Account has been reset {settings.blownAccounts.length} time{settings.blownAccounts.length > 1 ? 's' : ''}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -364,34 +396,54 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Mark as Blown Button */}
-                  <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                    <p className="text-xs text-orange-800 dark:text-orange-300 mb-2">
-                      Lost all your money through trading? Mark your account as blown to track your resets.
-                    </p>
+                  <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-start mb-2">
+                      <FiAlertCircle className="text-orange-600 dark:text-orange-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-orange-900 dark:text-orange-200 mb-1">
+                          Mark Account as Blown
+                        </p>
+                        <p className="text-xs text-orange-800 dark:text-orange-300">
+                          Lost all your funds? This will reset your balance to $0 and clear your dashboard to start tracking fresh data. Your historical data will still be accessible.
+                        </p>
+                      </div>
+                    </div>
                     {!showBlownConfirm ? (
                       <button
                         onClick={() => setShowBlownConfirm(true)}
                         disabled={loading || settings.accountBalance === 0}
-                        className="flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-lg transition text-sm font-medium"
+                        className="w-full flex items-center justify-center px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition text-sm font-medium"
                       >
-                        <FiTrendingDown className="mr-2" /> Mark Account as Blown
+                        <FiTrendingDown className="mr-2" /> Mark as Blown
                       </button>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-orange-900 dark:text-orange-200">
-                          This will set your balance to $0 and record this in your history. Continue?
-                        </p>
+                        <div className="bg-orange-100 dark:bg-orange-900/40 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-orange-900 dark:text-orange-200 mb-2">
+                            ⚠️ Confirm Account Reset
+                          </p>
+                          <p className="text-xs text-orange-800 dark:text-orange-300 mb-1">
+                            This will:
+                          </p>
+                          <ul className="text-xs text-orange-800 dark:text-orange-300 list-disc list-inside space-y-1">
+                            <li>Set your balance to $0</li>
+                            <li>Clear your dashboard data</li>
+                            <li>Record this reset in your history</li>
+                            <li>Allow you to start fresh with new trades</li>
+                          </ul>
+                        </div>
                         <div className="flex gap-2">
                           <button
                             onClick={handleMarkAsBlown}
                             disabled={loading}
-                            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-lg transition text-sm font-medium"
+                            className="flex-1 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-lg transition text-sm font-medium"
                           >
-                            Yes, Mark as Blown
+                            {loading ? 'Processing...' : 'Yes, Mark as Blown'}
                           </button>
                           <button
                             onClick={() => setShowBlownConfirm(false)}
-                            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition text-sm font-medium"
+                            disabled={loading}
+                            className="flex-1 px-4 py-2.5 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg transition text-sm font-medium"
                           >
                             Cancel
                           </button>
@@ -414,11 +466,11 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Deposit History Tab */}
+          {/* Transaction History Tab */}
           {activeTab === 'deposits' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                <FiBarChart2 className="mr-2" /> Deposit History & Analytics
+                <FiBarChart2 className="mr-2" /> Transaction History & Analytics
               </h1>
 
               {/* Statistics Cards */}
@@ -452,32 +504,41 @@ export default function SettingsPage() {
               {/* Transaction History */}
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                  <FiCalendar className="mr-2" /> Transaction History
+                  <FiCalendar className="mr-2" /> All Transactions
                 </h3>
+                
                 
                 {settings.depositHistory && settings.depositHistory.length > 0 ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {settings.depositHistory.slice().reverse().map((record, index) => (
                       <div 
                         key={index}
-                        className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
+                        className={`bg-white dark:bg-gray-800 p-4 rounded-lg border ${
+                          record.type === 'blown' 
+                            ? 'border-red-300 dark:border-red-700' 
+                            : 'border-gray-200 dark:border-gray-600'
+                        }`}
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                               record.type === 'deposit' 
                                 ? 'bg-green-100 dark:bg-green-900' 
+                                : record.type === 'blown'
+                                ? 'bg-red-100 dark:bg-red-900'
                                 : 'bg-orange-100 dark:bg-orange-900'
                             }`}>
                               {record.type === 'deposit' ? (
-                                <FiPlus className={`text-green-600 dark:text-green-400`} />
+                                <FiPlus className="text-green-600 dark:text-green-400" />
+                              ) : record.type === 'blown' ? (
+                                <FiTrendingDown className="text-red-600 dark:text-red-400" />
                               ) : (
-                                <FiMinus className={`text-orange-600 dark:text-orange-400`} />
+                                <FiMinus className="text-orange-600 dark:text-orange-400" />
                               )}
                             </div>
                             <div className="ml-3">
                               <p className="text-sm font-medium text-gray-800 dark:text-white capitalize">
-                                {record.type}
+                                {record.type === 'blown' ? 'Account Blown' : record.type}
                               </p>
                               <p className="text-xs text-gray-600 dark:text-gray-400">
                                 {formatDate(record.date)}
@@ -488,9 +549,16 @@ export default function SettingsPage() {
                             <p className={`text-lg font-bold ${
                               record.type === 'deposit' 
                                 ? 'text-green-600 dark:text-green-400' 
+                                : record.type === 'blown'
+                                ? 'text-red-600 dark:text-red-400'
                                 : 'text-orange-600 dark:text-orange-400'
                             }`}>
-                              {record.type === 'deposit' ? '+' : '-'}${record.amount.toFixed(2)}
+                              {record.type === 'blown' 
+                                ? `-${record.amount?.toFixed(2) || '0.00'}` 
+                                : record.type === 'deposit' 
+                                ? `+${record.amount.toFixed(2)}`
+                                : `-${record.amount.toFixed(2)}`
+                              }
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                               Balance: ${record.balanceAfter?.toFixed(2) || '0.00'}
@@ -514,63 +582,106 @@ export default function SettingsPage() {
           )}
 
           {/* Blown Accounts Tab */}
-          {activeTab === 'blown' && settings.blownAccounts && settings.blownAccounts.length > 0 && (
+          {activeTab === 'blown' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
-                <FiTrendingDown className="mr-2" /> Account Blown History
+                <FiTrendingDown className="mr-2" /> Blown Account History
               </h1>
               
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-red-800 dark:text-red-300">
-                      Total Blown Accounts
-                    </p>
-                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">
-                      {settings.blownAccounts.length}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-red-700 dark:text-red-400">
-                      Total Lost
-                    </p>
-                    <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                      ${settings.blownAccounts.reduce((sum, record) => sum + (record.previousBalance || 0), 0).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {settings.blownAccounts.slice().reverse().map((record, index) => (
-                  <div 
-                    key={index}
-                    className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
-                  >
-                    <div className="flex justify-between items-start">
+              {settings.blownAccounts && settings.blownAccounts.length > 0 ? (
+                <>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-white">
-                          Blown Account #{settings.blownAccounts.length - index}
-                          {record.markedManually && (
-                            <span className="ml-2 text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-0.5 rounded">
-                              Manual
-                            </span>
-                          )}
+                        <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                          Total Account Resets
                         </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          {formatDate(record.date)}
+                        <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                          {settings.blownAccounts.length}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Lost Balance</p>
-                        <p className="text-lg font-bold text-red-600">
-                          ${record.previousBalance?.toFixed(2) || '0.00'}
+                        <p className="text-sm text-red-700 dark:text-red-400">
+                          Total Capital Lost
+                        </p>
+                        <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                          ${settings.blownAccounts.reduce((sum, record) => sum + (record.previousBalance || 0), 0).toFixed(2)}
                         </p>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  <div className="space-y-4">
+                    {settings.blownAccounts.slice().reverse().map((record, index) => (
+                      <div 
+                        key={index}
+                        className="bg-white dark:bg-gray-800 p-5 rounded-lg border-2 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 transition"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-red-600 dark:text-red-400 font-bold text-sm">
+                                  #{settings.blownAccounts.length - index}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-base font-semibold text-gray-800 dark:text-white">
+                                  Account Reset #{settings.blownAccounts.length - index}
+                                </p>
+                                {record.markedManually && (
+                                  <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-0.5 rounded">
+                                    Manually Marked
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="ml-11">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                                <FiCalendar className="mr-1.5" />
+                                {formatDate(record.date)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Lost Balance</p>
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                              ${record.previousBalance?.toFixed(2) || '0.00'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Learning Section */}
+                  <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <FiAlertCircle className="text-blue-600 dark:text-blue-400 mt-1 mr-3 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
+                          Learn from Your Journey
+                        </p>
+                        <p className="text-xs text-blue-800 dark:text-blue-300">
+                          Each reset is an opportunity to improve your trading strategy. Review your historical data to identify patterns and avoid repeating mistakes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FiTrendingDown className="text-3xl text-green-600 dark:text-green-400" />
+                  </div>
+                  <p className="text-lg font-medium text-gray-800 dark:text-white mb-2">
+                    No Blown Accounts Yet
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Keep up the good work! Your account is still active.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
